@@ -372,6 +372,730 @@ var CURRENCIES = [
         symbol: 'storm',
         validator: ETHValidator
     }, {
+        name: 'FirstBlood',
+        symbol: '1st',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Arcblock',
+        symbol: 'abt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Abyss Token',
+        symbol: 'abyss',
+        validator: ETHValidator,
+
+    }, {
+        name: 'adToken',
+        symbol: 'adt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'AdEx',
+        symbol: 'adx',
+        validator: ETHValidator,
+
+    }, {
+        name: 'SingularityNET',
+        symbol: 'agi',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Ambrosus',
+        symbol: 'amb',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Ankr',
+        symbol: 'ankr',
+        validator: ETHValidator,
+
+    }, {
+        name: 'AppCoins',
+        symbol: 'appc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Aeron',
+        symbol: 'arn',
+        validator: ETHValidator,
+
+    }, {
+        name: 'ATLANT',
+        symbol: 'atl',
+        validator: ETHValidator,
+
+    }, {
+        name: 'aXpire',
+        symbol: 'axpr',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Band Protocol',
+        symbol: 'band',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Blockmason Credit Protocol',
+        symbol: 'bcpt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'BitDegree',
+        symbol: 'bdg',
+        validator: ETHValidator,
+
+    }, {
+        name: 'BetterBetting',
+        symbol: 'betr',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Bluzelle',
+        symbol: 'blz',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Bread',
+        symbol: 'brd',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Blocktrade Token',
+        symbol: 'btt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Binance USD',
+        symbol: 'busd',
+        validator: ETHValidator,
+
+    }, {
+        name: 'CryptoBossCoin',
+        symbol: 'cbc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Blox',
+        symbol: 'cdt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Celer Network',
+        symbol: 'celr',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Chiliz',
+        symbol: 'chz',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Coinlancer',
+        symbol: 'cl',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Cindicator',
+        symbol: 'cnd',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Cocos-BCX',
+        symbol: 'cocos',
+        validator: ETHValidator,
+
+    }, {
+        name: 'COS',
+        symbol: 'cos',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Cosmo Coin',
+        symbol: 'cosm',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Covesting',
+        symbol: 'cov',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Crypterium',
+        symbol: 'crpt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Daneel',
+        symbol: 'dan',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Streamr DATAcoin',
+        symbol: 'data',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Dentacoin',
+        symbol: 'dcn',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Dent',
+        symbol: 'dent',
+        validator: ETHValidator,
+
+    }, {
+        name: 'DigixDAO',
+        symbol: 'dgd',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Digitex Futures',
+        symbol: 'dgtx',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Agrello',
+        symbol: 'dlt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Dock',
+        symbol: 'dock',
+        validator: ETHValidator,
+
+    }, {
+        name: 'DomRaider',
+        symbol: 'drt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Dusk Network',
+        symbol: 'dusk',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Edgeless',
+        symbol: 'edg',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Eidoo',
+        symbol: 'edo',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Electrify.Asia',
+        symbol: 'elec',
+        validator: ETHValidator,
+
+    }, {
+        name: 'aelf',
+        symbol: 'elf',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Enigma',
+        symbol: 'eng',
+        validator: ETHValidator,
+
+    }, {
+        name: 'STASIS EURO',
+        symbol: 'eurs',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Everex',
+        symbol: 'evx',
+        validator: ETHValidator,
+
+    }, {
+        name: 'FirmaChain',
+        symbol: 'fct',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Fetch.ai',
+        symbol: 'fet',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Fortuna',
+        symbol: 'fota',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Fantom',
+        symbol: 'ftm',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Etherparty',
+        symbol: 'fuel',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Gifto',
+        symbol: 'gto',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Gemini Dollar',
+        symbol: 'gusd',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Genesis Vision',
+        symbol: 'gvt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Humaniq',
+        symbol: 'hmq',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Holo',
+        symbol: 'hot',
+        validator: ETHValidator,
+
+    }, {
+        name: 'HOQU',
+        symbol: 'hqx',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Huobi Token',
+        symbol: 'ht',
+        validator: ETHValidator,
+
+    }, {
+        name: 'IHT Real Estate Protocol',
+        symbol: 'iht',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Insolar',
+        symbol: 'ins',
+        validator: ETHValidator,
+
+    }, {
+        name: 'IoTeX',
+        symbol: 'iotx',
+        validator: ETHValidator,
+
+    }, {
+        name: 'BitKan',
+        symbol: 'kan',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Kcash',
+        symbol: 'kcash',
+        validator: ETHValidator,
+
+    }, {
+        name: 'KEY',
+        symbol: 'key',
+        validator: ETHValidator,
+
+    }, {
+        name: 'KickToken',
+        symbol: 'kick',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Kyber Network',
+        symbol: 'knc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Lambda',
+        symbol: 'lamb',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Aave',
+        symbol: 'lend',
+        validator: ETHValidator,
+
+    }, {
+        name: 'LinkEye',
+        symbol: 'let',
+        validator: ETHValidator,
+
+    }, {
+        name: 'LIFE',
+        symbol: 'life',
+        validator: ETHValidator,
+
+    }, {
+        name: 'LockTrip',
+        symbol: 'loc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Loopring',
+        symbol: 'lrc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Lunyr',
+        symbol: 'lun',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Decentraland',
+        symbol: 'mana',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Matic Network',
+        symbol: 'matic',
+        validator: ETHValidator,
+
+    }, {
+        name: 'MCO',
+        symbol: 'mco',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Moeda Loyalty Points',
+        symbol: 'mda',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Measurable Data Token',
+        symbol: 'mdt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Mainframe',
+        symbol: 'mft',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Mithril',
+        symbol: 'mith',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Molecular Future',
+        symbol: 'mof',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Monetha',
+        symbol: 'mth',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Mysterium',
+        symbol: 'myst',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Nucleus Vision',
+        symbol: 'ncash',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Nexo',
+        symbol: 'nexo',
+        validator: ETHValidator,
+
+    }, {
+        name: 'NAGA',
+        symbol: 'ngc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Noah Coin',
+        symbol: 'noah',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Pundi X',
+        symbol: 'npxs',
+        validator: ETHValidator,
+
+    }, {
+        name: 'NetKoin',
+        symbol: 'ntk',
+        validator: ETHValidator,
+
+    }, {
+        name: 'OAX',
+        symbol: 'oax',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Menlo One',
+        symbol: 'one',
+        validator: ETHValidator,
+
+    }, {
+        name: 'SoMee.Social',
+        symbol: 'ong',
+        validator: ETHValidator,
+
+    }, {
+        name: 'ORS Group',
+        symbol: 'ors',
+        validator: ETHValidator,
+
+    }, {
+        name: 'OST',
+        symbol: 'ost',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Patron',
+        symbol: 'pat',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Paxos Standard',
+        symbol: 'pax',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Peculium',
+        symbol: 'pcl',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Perlin',
+        symbol: 'perl',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Pillar',
+        symbol: 'plr',
+        validator: ETHValidator,
+
+    }, {
+        name: 'PumaPay',
+        symbol: 'pma',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Po.et',
+        symbol: 'poe',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Power Ledger',
+        symbol: 'powr',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Populous',
+        symbol: 'ppt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Presearch',
+        symbol: 'pre',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Patientory',
+        symbol: 'ptoy',
+        validator: ETHValidator,
+
+    }, {
+        name: 'QuarkChain',
+        symbol: 'qkc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Quantstamp',
+        symbol: 'qsp',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Revain',
+        symbol: 'r',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Raiden Network Token',
+        symbol: 'rdn',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Ren',
+        symbol: 'ren',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Request',
+        symbol: 'req',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Refereum',
+        symbol: 'rfr',
+        validator: ETHValidator,
+
+    }, {
+        name: 'SiaCashCoin',
+        symbol: 'scc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Sentinel',
+        symbol: 'sent',
+        validator: ETHValidator,
+
+    }, {
+        name: 'SkinCoin',
+        symbol: 'skin',
+        validator: ETHValidator,
+
+    }, {
+        name: 'SunContract',
+        symbol: 'snc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'SingularDTV',
+        symbol: 'sngls',
+        validator: ETHValidator,
+
+    }, {
+        name: 'SONM',
+        symbol: 'snm',
+        validator: ETHValidator,
+
+    }, {
+        name: 'All Sports',
+        symbol: 'soc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'SIRIN LABS Token',
+        symbol: 'srn',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Stox',
+        symbol: 'stx',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Substratum',
+        symbol: 'sub',
+        validator: ETHValidator,
+
+    }, {
+        name: 'SwftCoin',
+        symbol: 'swftc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Lamden',
+        symbol: 'tau',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Telcoin',
+        symbol: 'tel',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Chronobank',
+        symbol: 'time',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Monolith',
+        symbol: 'tkn',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Time New Bank',
+        symbol: 'tnb',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Tierion',
+        symbol: 'tnt',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Tripio',
+        symbol: 'trio',
+        validator: ETHValidator,
+
+    }, {
+        name: 'WeTrust',
+        symbol: 'trst',
+        validator: ETHValidator,
+
+    }, {
+        name: 'USD Coin',
+        symbol: 'usdc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Utrust',
+        symbol: 'utk',
+        validator: ETHValidator,
+
+    }, {
+        name: 'BLOCKv',
+        symbol: 'vee',
+        validator: ETHValidator,
+
+    }, {
+        name: 'VIBE',
+        symbol: 'vibe',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Tael',
+        symbol: 'wabi',
+        validator: ETHValidator,
+
+    }, {
+        name: 'WePower',
+        symbol: 'wpr',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Waltonchain',
+        symbol: 'wtc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'BlitzPredict',
+        symbol: 'xbp',
+        validator: ETHValidator,
+
+    }, {
+        name: 'CryptoFranc',
+        symbol: 'xchf',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Exchange Union',
+        symbol: 'xuc',
+        validator: ETHValidator,
+
+    }, {
+        name: 'YOU COIN',
+        symbol: 'you',
+        validator: ETHValidator,
+
+    }, {
+        name: 'Zap',
+        symbol: 'zap',
+        validator: ETHValidator,
+    }, {
         name: 'Nano',
         symbol: 'nano',
         validator: NANOValidator,
