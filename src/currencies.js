@@ -1183,10 +1183,10 @@ var CURRENCIES = [
         name: 'Ocean Protocol',
         symbol: 'ocean',
         validator: ETHValidator,
-    }, {
-        name: 'PitisCoin',
-        symbol: 'pts',
-        validator: ETHValidator,
+    //}, {
+    //    name: 'PitisCoin',
+    //    symbol: 'pts', # FIXME: symbol collides with ProtoShares
+    //    validator: BTCValidator,
     }, {
         name: 'Quant',
         symbol: 'qnt',
