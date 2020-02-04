@@ -460,6 +460,10 @@ var CURRENCIES = [
         symbol: 'ocean',
         validator: ETHValidator,
     }, {
+        name: 'PitisCoin',
+        symbol: 'pts',
+        validator: ETHValidator,
+    }, {
         name: 'Quant',
         symbol: 'qnt',
         validator: ETHValidator,
