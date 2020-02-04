@@ -1042,6 +1042,10 @@ var CURRENCIES = [
         validator: ETHValidator,
 
     }, {
+        name: 'USDT ERC-20',
+        symbol: 'usdt20',
+        validator: ETHValidator,
+    }, {
         name: 'Utrust',
         symbol: 'utk',
         validator: ETHValidator,
