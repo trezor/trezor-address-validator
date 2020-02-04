@@ -1144,6 +1144,10 @@ var CURRENCIES = [
         symbol: 'xlm',
         validator: XLMValidator,
     }, {
+        name: 'Scopuly',
+        symbol: 'sky',
+        validator: XLMValidator,
+    }, {
         name: 'BTU Protocol',
         symbol: 'btu',
         validator: ETHValidator,
