@@ -18,6 +18,7 @@ var ARDRValidator = require('./ardr_validator');
 var ATOMValidator = require('./atom_validator');
 var HBARValidator = require('./hbar_validator');
 var ICXValidator = require('./icx_validator');
+var IOSTValidator = require('./iost_validator');
 
 // defines P2PKH, P2SH and bech32 address types for standard (prod) and testnet networks
 var CURRENCIES = [
@@ -637,6 +638,10 @@ var CURRENCIES = [
         name: 'ICON',
         symbol: 'icx',
         validator: ICXValidator,
+    }, {
+        name: 'Internet of Services',
+        symbol: 'IOST',
+        validator: IOSTValidator,
     }, {
         name: 'IHT Real Estate Protocol',
         symbol: 'iht',

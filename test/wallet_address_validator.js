@@ -505,6 +505,10 @@ describe('WAValidator.validate()', function () {
             invalid('hxde8ba8fd110625a0c47ecf29de308b8f5bd20eD6', 'icx')
         });
 
+        it('should return true for correct IOST addresses', () => {
+            valid('binanceiost', 'iost')
+        });
+
         it('should return true for correct loki addresses', function () {
             // public
             valid(
