@@ -14,6 +14,7 @@ var BinanceValidator = require('./binance_validator');
 var EOSValidator = require('./eos_validator');
 var XTZValidator = require('./tezos_validator');
 var AEValidator = require('./ae_validator');
+var ARDRValidator = require('./ardr_validator');
 
 // defines P2PKH, P2SH and bech32 address types for standard (prod) and testnet networks
 var CURRENCIES = [
@@ -273,6 +274,10 @@ var CURRENCIES = [
         name: 'Aragon',
         symbol: 'ant',
         validator: ETHValidator
+    }, {
+        name: 'Ardor',
+        symbol: 'ardr',
+        validator: ARDRValidator
     }, {
         name: 'Basic Attention Token',
         symbol: 'bat',
