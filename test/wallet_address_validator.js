@@ -513,6 +513,13 @@ describe('WAValidator.validate()', function () {
             valid('ABFJCYEFHIV9XJY9XKDNYZGHBPYRYNFMUUNXAMZMFIEYSDKNHNEUSEXQYEWQTDNFETUNRSMEKJUCIKEEWFSWZYVFXD', 'iota')
         });
 
+        it('should return false for incorrect Ontology addresses', () => {
+            invalid('AXu57dhdNDnA5drqJUM2KfoMqgaLwmZwow', 'ont')
+            invalid('TNVv2v7eKL525gZ2YCmFnsB2FGNG4VeMHd', 'ont')
+            invalid('TFYhfePLaZq2Y4BdKAnorm3XjjqTZcc9m4', 'ont')
+            invalid('AecjxQsLGsSU3nmx92UuGGbF1fj7EsGrt2', 'ont')
+        });
+
         it('should return true for correct loki addresses', function () {
             // public
             valid(

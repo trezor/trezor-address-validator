@@ -246,6 +246,11 @@ var CURRENCIES = [
         regex: /^[a-zA-Z0-9]{35}$/,
         validator: BTCValidator,
     }, {
+        name: 'Ontology',
+        symbol: 'ont',
+        validator: BTCValidator,
+        addressTypes: { prod: ['17', '41'] }
+    }, {
         name: 'Ethereum',
         symbol: 'eth',
         validator: ETHValidator,
