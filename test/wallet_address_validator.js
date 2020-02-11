@@ -494,6 +494,12 @@ describe('WAValidator.validate()', function () {
             invalid('cosmos15v50ymp6n5dn73erkQtmq0u8adpl8d3ujv2e74', 'atom')
         });
 
+        it('should return true for correct HashGraph addresses', () => {
+            valid('0.0.10819', 'hbar')
+            valid('0.0.13458', 'hbar')
+            valid('0.0.16952', 'hbar')
+        });
+
         it('should return true for correct loki addresses', function () {
             // public
             valid(

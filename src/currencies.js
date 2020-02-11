@@ -16,6 +16,7 @@ var XTZValidator = require('./tezos_validator');
 var AEValidator = require('./ae_validator');
 var ARDRValidator = require('./ardr_validator');
 var ATOMValidator = require('./atom_validator');
+var HBARValidator = require('./hbar_validator');
 
 // defines P2PKH, P2SH and bech32 address types for standard (prod) and testnet networks
 var CURRENCIES = [
@@ -1107,7 +1108,11 @@ var CURRENCIES = [
         name: 'Tezos',
         symbol: 'xtz',
         validator: XTZValidator
-    }
+    }, {
+        name: 'Hedera Hashgraph',
+        symbol: 'hbar',
+        validator: HBARValidator
+	}
 ];
 
 
