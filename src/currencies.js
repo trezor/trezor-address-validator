@@ -367,6 +367,11 @@ var CURRENCIES = [
         symbol: 'steem',
         validator: STEEMValidator
     }, {
+        name: 'Stratis',
+        symbol: 'strat',
+        validator: BTCValidator,
+        addressTypes: { prod: ['3f'] }
+    }, {
         name: 'Swarm City',
         symbol: 'swt',
         validator: ETHValidator,

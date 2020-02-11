@@ -532,6 +532,10 @@ describe('WAValidator.validate()', function () {
             invalid('.', 'steem')
         });
 
+        it('should return true for correct Stratis addresses', () => {
+            valid('SY7YwpMGvU42dkFzmFEkGWFr1BEikUwhPT', 'strat')
+        });
+
         it('should return true for correct loki addresses', function () {
             // public
             valid(
