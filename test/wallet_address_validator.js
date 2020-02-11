@@ -509,6 +509,10 @@ describe('WAValidator.validate()', function () {
             valid('binanceiost', 'iost')
         });
 
+        it('should return true for correct (M)IOTA addresses', () => {
+            valid('ABFJCYEFHIV9XJY9XKDNYZGHBPYRYNFMUUNXAMZMFIEYSDKNHNEUSEXQYEWQTDNFETUNRSMEKJUCIKEEWFSWZYVFXD', 'iota')
+        });
+
         it('should return true for correct loki addresses', function () {
             // public
             valid(
