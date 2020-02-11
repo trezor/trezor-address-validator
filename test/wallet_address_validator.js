@@ -486,7 +486,13 @@ describe('WAValidator.validate()', function () {
                 'ffe1308c044ade30392a0cdc1fd5a4dbe94f9616a95faf888ed36123d9e711557aa497530373',
                 'siacoin'
             )
-        })
+        });
+
+        it('should return false for incorrect Cosmos addresses', () => {
+            invalid('cosmo15v50ymp6n5dn73erkqtmq0u8adpl8d3ujv2e74', 'atom')
+            invalid('cosmos25v50ymp6n5dn73erkqtmq0u8adpl8d3ujv2e74', 'atom')
+            invalid('cosmos15v50ymp6n5dn73erkQtmq0u8adpl8d3ujv2e74', 'atom')
+        });
 
         it('should return true for correct loki addresses', function () {
             // public

@@ -15,6 +15,7 @@ var EOSValidator = require('./eos_validator');
 var XTZValidator = require('./tezos_validator');
 var AEValidator = require('./ae_validator');
 var ARDRValidator = require('./ardr_validator');
+var ATOMValidator = require('./atom_validator');
 
 // defines P2PKH, P2SH and bech32 address types for standard (prod) and testnet networks
 var CURRENCIES = [
@@ -418,6 +419,10 @@ var CURRENCIES = [
         name: 'AppCoins',
         symbol: 'appc',
         validator: ETHValidator,
+    }, {
+        name: 'Cosmos',
+        symbol: 'atom',
+        validator: ATOMValidator
     }, {
         name: 'Aeron',
         symbol: 'arn',
