@@ -536,6 +536,17 @@ describe('WAValidator.validate()', function () {
             valid('SY7YwpMGvU42dkFzmFEkGWFr1BEikUwhPT', 'strat')
         });
 
+        it('should return true for correct Syscoin addresses', () => {
+            valid('SdzKyvhD2Y3xJvGVSfx96NXszq6x9BZX34', 'sys')
+            valid('SSSBZDMVxuZyEMW4s6ar79Cf9UKqy6ZCwf', 'sys')
+            valid('SUQ4gsnsTUeYJgTLsQ3siryr9HfHp95p12', 'sys')
+            valid('SdzKyvhD2Y3xJvGVSfx96NXszq6x9BZX34', 'sys')
+            valid('SbmNaK9hVn9BUoPoPtTmXogfGfZd5Mophm', 'sys')
+            valid('SQUDdLog219Hpcz6Zss4uXg6xU1pAcnbLF', 'sys')
+            valid('STxiBMedbmA28ip1QMooZaTBHxyiwVSCSr', 'sys')
+            valid('SV4yxaugDJB6WXT5hNJwN1Pz6M8TjrMmJ6', 'sys')
+        });
+
         it('should return true for correct loki addresses', function () {
             // public
             valid(

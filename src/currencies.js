@@ -21,6 +21,7 @@ var ICXValidator = require('./icx_validator');
 var IOSTValidator = require('./iost_validator');
 var IOTAValidator = require('./iota_validator');
 var STEEMValidator = require('./steem_validator');
+var SYSValidator = require('./sys_validator');
 
 // defines P2PKH, P2SH and bech32 address types for standard (prod) and testnet networks
 var CURRENCIES = [
@@ -371,6 +372,11 @@ var CURRENCIES = [
         symbol: 'strat',
         validator: BTCValidator,
         addressTypes: { prod: ['3f'] }
+    }, {
+        name: 'Syscoin',
+        symbol: 'sys',
+        addressTypes: { prod: ['3f'] },
+        validator: SYSValidator
     }, {
         name: 'Swarm City',
         symbol: 'swt',
