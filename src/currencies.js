@@ -29,6 +29,11 @@ var CURRENCIES = [
         addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4'] },
         validator: BCHValidator
     }, {
+        name: 'Bitcoin Diamond',
+        symbol: 'bcd',
+        validator: BTCValidator,
+        addressTypes: { prod: ['00'] }
+	}, {
         name: 'Bitcoin SV',
         symbol: 'bsv',
         regexp: '^[qQ]{1}[0-9a-zA-Z]{41}$',
