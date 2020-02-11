@@ -251,6 +251,11 @@ var CURRENCIES = [
         validator: BTCValidator,
         addressTypes: { prod: ['17', '41'] }
     }, {
+        name: 'Ravencoin',
+        symbol: 'rvn',
+        validator: BTCValidator,
+        addressTypes: { prod: ['3c'] }
+    }, {
         name: 'Ethereum',
         symbol: 'eth',
         validator: ETHValidator,

@@ -520,6 +520,10 @@ describe('WAValidator.validate()', function () {
             invalid('AecjxQsLGsSU3nmx92UuGGbF1fj7EsGrt2', 'ont')
         });
 
+        it('should return false for incorrect Ravencoin addresses', () => {
+            invalid('RFnM9d8sjAPn24yJi4VACWWWZjaYyFwd8k', 'rvn')
+        });
+
         it('should return true for correct loki addresses', function () {
             // public
             valid(
