@@ -22,6 +22,7 @@ var IOSTValidator = require('./iost_validator');
 var IOTAValidator = require('./iota_validator');
 var STEEMValidator = require('./steem_validator');
 var SYSValidator = require('./sys_validator');
+var ZILValidator = require('./zil_validator');
 
 // defines P2PKH, P2SH and bech32 address types for standard (prod) and testnet networks
 var CURRENCIES = [
@@ -1158,6 +1159,10 @@ var CURRENCIES = [
         symbol: 'xvg',
         addressTypes: { prod: ['1e'], testnet: ['6F'] },
         validator: BTCValidator,
+    }, {
+        name: 'Zilliqa',
+        symbol: 'zil',
+        validator: ZILValidator
 	}
 ];
 
