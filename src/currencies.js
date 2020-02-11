@@ -20,6 +20,7 @@ var HBARValidator = require('./hbar_validator');
 var ICXValidator = require('./icx_validator');
 var IOSTValidator = require('./iost_validator');
 var IOTAValidator = require('./iota_validator');
+var STEEMValidator = require('./steem_validator');
 
 // defines P2PKH, P2SH and bech32 address types for standard (prod) and testnet networks
 var CURRENCIES = [
@@ -361,6 +362,10 @@ var CURRENCIES = [
         name: 'Storj',
         symbol: 'storj',
         validator: ETHValidator,
+    }, {
+        name: 'STEEM',
+        symbol: 'steem',
+        validator: STEEMValidator
     }, {
         name: 'Swarm City',
         symbol: 'swt',

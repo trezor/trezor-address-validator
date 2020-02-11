@@ -524,6 +524,14 @@ describe('WAValidator.validate()', function () {
             invalid('RFnM9d8sjAPn24yJi4VACWWWZjaYyFwd8k', 'rvn')
         });
 
+        it('should return false for incorrect STEEM addresses', () => {
+            invalid('meet--crypto8', 'steem')
+            invalid('me.etcrypto8', 'steem')
+            invalid('met.8etcrypto8', 'steem')
+            invalid('me', 'steem')
+            invalid('.', 'steem')
+        });
+
         it('should return true for correct loki addresses', function () {
             // public
             valid(
