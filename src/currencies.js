@@ -17,6 +17,7 @@ var AEValidator = require('./ae_validator');
 var ARDRValidator = require('./ardr_validator');
 var ATOMValidator = require('./atom_validator');
 var HBARValidator = require('./hbar_validator');
+var ICXValidator = require('./icx_validator');
 
 // defines P2PKH, P2SH and bech32 address types for standard (prod) and testnet networks
 var CURRENCIES = [
@@ -25,13 +26,13 @@ var CURRENCIES = [
         symbol: 'btc',
         segwitHrp: { prod: 'bc', testnet: 'tb' },
         addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4', '3c', '26'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'BitcoinCash',
         symbol: 'bch',
         regexp: '^[qQpP]{1}[0-9a-zA-Z]{41}$',
         addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4'] },
-        validator: BCHValidator
+        validator: BCHValidator,
     }, {
         name: 'Bitcoin Diamond',
         symbol: 'bcd',
@@ -42,23 +43,23 @@ var CURRENCIES = [
         symbol: 'bsv',
         regexp: '^[qQ]{1}[0-9a-zA-Z]{41}$',
         addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4'] },
-        validator: BCHValidator
+        validator: BCHValidator,
     }, {
         name: 'LiteCoin',
         symbol: 'ltc',
         segwitHrp: { prod: 'ltc', testnet: 'tltc' },
         addressTypes: { prod: ['30', '05', '32'], testnet: ['6f', 'c4', '3a'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'PeerCoin',
         symbol: 'ppc',
         addressTypes: { prod: ['37', '75'], testnet: ['6f', 'c4'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'DogeCoin',
         symbol: 'doge',
         addressTypes: { prod: ['1e', '16'], testnet: ['71', 'c4'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'BeaverCoin',
         symbol: 'bvc',
@@ -68,147 +69,147 @@ var CURRENCIES = [
         name: 'FreiCoin',
         symbol: 'frc',
         addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'ProtoShares',
         symbol: 'pts',
         addressTypes: { prod: ['38', '05'], testnet: ['6f', 'c4'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'MegaCoin',
         symbol: 'mec',
         addressTypes: { prod: ['32', '05'], testnet: ['6f', 'c4'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'PrimeCoin',
         symbol: 'xpm',
         addressTypes: { prod: ['17', '53'], testnet: ['6f', 'c4'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'AuroraCoin',
         symbol: 'aur',
         addressTypes: { prod: ['17', '05'], testnet: ['6f', 'c4'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'NameCoin',
         symbol: 'nmc',
         addressTypes: { prod: ['34'], testnet: [] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'BioCoin',
         symbol: 'bio',
         addressTypes: { prod: ['19', '14'], testnet: ['6f', 'c4'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'GarliCoin',
         symbol: 'grlc',
         addressTypes: { prod: ['26', '05'], testnet: ['6f', 'c4'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'VertCoin',
         symbol: 'vtc',
         segwitHrp: { prod: 'vtc', testnet: 'tvtc' },
         addressTypes: { prod: ['47', '05'], testnet: ['4a', 'c4', '6f'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'BitcoinGold',
         symbol: 'btg',
         segwitHrp: { prod: 'btg', testnet: 'tbtg' },
         addressTypes: { prod: ['26', '17'], testnet: ['6f', 'c4'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'Komodo',
         symbol: 'kmd',
         addressTypes: { prod: ['3c', '55'], testnet: ['0', '5'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'BitcoinZ',
         symbol: 'btcz',
         expectedLength: 26,
         addressTypes: { prod: ['1cb8', '1cbd'], testnet: ['1d25', '1cba'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'BitcoinPrivate',
         symbol: 'btcp',
         expectedLength: 26,
         addressTypes: { prod: ['1325', '13af'], testnet: ['1957', '19e0'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'Hush',
         symbol: 'hush',
         expectedLength: 26,
         addressTypes: { prod: ['1cb8', '1cbd'], testnet: ['1d25', '1cba'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'SnowGem',
         symbol: 'sng',
         expectedLength: 26,
         addressTypes: { prod: ['1c28', '1c2d'], testnet: ['1d25', '1cba'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'ZCash',
         symbol: 'zec',
         expectedLength: 26,
         addressTypes: { prod: ['1cb8', '1cbd'], testnet: ['1d25', '1cba'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'ZClassic',
         symbol: 'zcl',
         expectedLength: 26,
         addressTypes: { prod: ['1cb8', '1cbd'], testnet: ['1d25', '1cba'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'ZenCash',
         symbol: 'zen',
         expectedLength: 26,
         addressTypes: { prod: ['2089', '2096'], testnet: ['2092', '2098'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'VoteCoin',
         symbol: 'vot',
         expectedLength: 26,
         addressTypes: { prod: ['1cb8', '1cbd'], testnet: ['1d25', '1cba'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'Decred',
         symbol: 'dcr',
         addressTypes: { prod: ['073f', '071a'], testnet: ['0f21', '0efc'] },
         hashFunction: 'blake256',
         expectedLength: 26,
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'GameCredits',
         symbol: 'game',
         segwitHrp: { prod: 'game',  prod: 'tgame' },
         addressTypes: { prod: ['26', '3e'], testnet: ['6f', '3a'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'PIVX',
         symbol: 'pivx',
         addressTypes: { prod: ['1e', '0d'], testnet: [] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'SolarCoin',
         symbol: 'slr',
         addressTypes: { prod: ['12', '05'], testnet: [] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'MonaCoin',
         symbol: 'mona',
         segwitHrp: { prod: 'mona',  prod: 'tmona' },
         addressTypes: { prod: ['32', '37'], testnet: ['6f', '75'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'DigiByte',
         symbol: 'dgb',
         segwitHrp: { prod: 'dgb' },
         addressTypes: { prod: ['1e', '3f'], testnet: [] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'Tether',
         symbol: 'usdt',
         addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'Ripple',
         symbol: 'xrp',
@@ -217,23 +218,23 @@ var CURRENCIES = [
         name: 'Dash',
         symbol: 'dash',
         addressTypes: { prod: ['4c', '10'], testnet: ['8c', '13'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'Neo',
         symbol: 'neo',
         addressTypes: { prod: ['17'], testnet: [] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'NeoGas',
         symbol: 'gas',
         addressTypes: { prod: ['17'], testnet: [] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'Qtum',
         symbol: 'qtum',
         segwitHrp: { prod: 'qc',  prod: 'tq' },
         addressTypes: { prod: ['3a', '32'], testnet: ['78', '6e'] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'Waves',
         symbol: 'waves',
@@ -241,7 +242,7 @@ var CURRENCIES = [
         expectedLength: 26,
         hashFunction: 'blake256keccak256',
         regex: /^[a-zA-Z0-9]{35}$/,
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'Ethereum',
         symbol: 'eth',
@@ -261,129 +262,129 @@ var CURRENCIES = [
     }, {
         name: 'Bankex',
         symbol: 'bkx',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Cardano',
         symbol: 'ada',
-        validator: ADAValidator
+        validator: ADAValidator,
     }, {
         name: 'Monero',
         symbol: 'xmr',
         addressTypes: { prod: ['18'], testnet: ['53'] },
         iAddressTypes: { prod: ['19'], testnet: ['54'] },
-        validator: XMRValidator
+        validator: XMRValidator,
     }, {
         name: 'Aragon',
         symbol: 'ant',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Ardor',
         symbol: 'ardr',
-        validator: ARDRValidator
+        validator: ARDRValidator,
     }, {
         name: 'Basic Attention Token',
         symbol: 'bat',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Bancor',
         symbol: 'bnt',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Civic',
         symbol: 'cvc',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'District0x',
         symbol: 'dnt',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Gnosis',
         symbol: 'gno',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Golem',
         symbol: 'gnt',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Matchpool',
         symbol: 'gup',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Melon',
         symbol: 'mln',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Numeraire',
         symbol: 'nmr',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'OmiseGO',
         symbol: 'omg',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'TenX',
         symbol: 'pay',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Ripio Credit Network',
         symbol: 'rcn',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Augur',
         symbol: 'rep',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'iExec RLC',
         symbol: 'rlc',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Salt',
         symbol: 'salt',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Status',
         symbol: 'snt',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Storj',
         symbol: 'storj',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Swarm City',
         symbol: 'swt',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'TrueUSD',
         symbol: 'tusd',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Wings',
         symbol: 'wings',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: '0x',
         symbol: 'zrx',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Expanse',
         symbol: 'exp',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Viberate',
         symbol: 'vib',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Odyssey',
         symbol: 'ocn',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Polymath',
         symbol: 'poly',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'Storm',
         symbol: 'storm',
-        validator: ETHValidator
+        validator: ETHValidator,
     }, {
         name: 'FirstBlood',
         symbol: '1st',
@@ -423,7 +424,7 @@ var CURRENCIES = [
     }, {
         name: 'Cosmos',
         symbol: 'atom',
-        validator: ATOMValidator
+        validator: ATOMValidator,
     }, {
         name: 'Aeron',
         symbol: 'arn',
@@ -431,7 +432,7 @@ var CURRENCIES = [
     }, {
         name: 'Aeternity',
         symbol: 'ae',
-        validator: AEValidator
+        validator: AEValidator,
     }, {
         name: 'ATLANT',
         symbol: 'atl',
@@ -632,6 +633,10 @@ var CURRENCIES = [
         name: 'Huobi Token',
         symbol: 'ht',
         validator: ETHValidator,
+    }, {
+        name: 'ICON',
+        symbol: 'icx',
+        validator: ICXValidator,
     }, {
         name: 'IHT Real Estate Protocol',
         symbol: 'iht',
@@ -987,35 +992,35 @@ var CURRENCIES = [
     }, {
         name: 'Siacoin',
         symbol: 'sc',
-        validator: SCValidator
+        validator: SCValidator,
     }, {
         name: 'HyperSpace',
         symbol: 'xsc',
-        validator: SCValidator
+        validator: SCValidator,
     }, {
         name: 'Loki',
         symbol: 'loki',
         addressTypes: { prod: ['114', '116'], testnet: [] },
         iAddressTypes: { prod: ['115'], testnet: [] },
-        validator: XMRValidator
+        validator: XMRValidator,
     }, {
         name: 'LBRY Credits',
         symbol: 'lbc',
         addressTypes: { prod: ['55'], testnet: [] },
-        validator: BTCValidator
+        validator: BTCValidator,
     }, {
         name: 'Tron',
         symbol: 'trx',
         addressTypes: { prod: [0x41], testnet: [0xa0] },
-        validator: TRXValidator
+        validator: TRXValidator,
     }, {
         name: 'Nem',
         symbol: 'xem',
-        validator: NEMValidator
+        validator: NEMValidator,
     }, {
         name: 'Lisk',
         symbol: 'lsk',
-        validator: LSKValidator
+        validator: LSKValidator,
     }, {
         name: 'Stellar',
         symbol: 'xlm',
@@ -1103,15 +1108,15 @@ var CURRENCIES = [
     }, {
       name: 'EOS',
       symbol: 'eos',
-      validator: EOSValidator
+      validator: EOSValidator,
     }, {
         name: 'Tezos',
         symbol: 'xtz',
-        validator: XTZValidator
+        validator: XTZValidator,
     }, {
         name: 'Hedera Hashgraph',
         symbol: 'hbar',
-        validator: HBARValidator
+        validator: HBARValidator,
 	}
 ];
 

@@ -500,6 +500,11 @@ describe('WAValidator.validate()', function () {
             valid('0.0.16952', 'hbar')
         });
 
+        it('should return false for incorrect ICON addresses', () => {
+            invalid('gxde8ba8fd110625a0c47ecf29de308b8f5bd20ed6', 'icx')
+            invalid('hxde8ba8fd110625a0c47ecf29de308b8f5bd20eD6', 'icx')
+        });
+
         it('should return true for correct loki addresses', function () {
             // public
             valid(
