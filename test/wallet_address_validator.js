@@ -536,6 +536,10 @@ describe('WAValidator.validate()', function () {
             valid('SY7YwpMGvU42dkFzmFEkGWFr1BEikUwhPT', 'strat')
         });
 
+        it('should return true for correct Verge addresses', () => {
+            valid('D9HsosoCM6pxWU4UD3cgHFacmD18Fu34g5', 'xvg')
+        });
+
         it('should return true for correct Syscoin addresses', () => {
             valid('SdzKyvhD2Y3xJvGVSfx96NXszq6x9BZX34', 'sys')
             valid('SSSBZDMVxuZyEMW4s6ar79Cf9UKqy6ZCwf', 'sys')

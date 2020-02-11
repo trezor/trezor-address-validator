@@ -1153,6 +1153,11 @@ var CURRENCIES = [
         name: 'Hedera Hashgraph',
         symbol: 'hbar',
         validator: HBARValidator,
+    }, {
+        name: 'Verge',
+        symbol: 'xvg',
+        addressTypes: { prod: ['1e'], testnet: ['6F'] },
+        validator: BTCValidator,
 	}
 ];
 
