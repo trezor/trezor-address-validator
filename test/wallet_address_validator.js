@@ -544,6 +544,13 @@ describe('WAValidator.validate()', function () {
             invalid('0xda816e2122a8a39b0926bfa84edd3d42477e9efE', 'zil')
         });
 
+        it('should return false for incorrect NXT addresses', () => {
+            valid('NXT-799W-TN9C-GL3Q-D3PXU', 'nxt')
+            valid('NXT-TMVC-69YC-SJB4-8YCH7', 'nxt')
+            invalid('NXT-799W-TN9C-GL3Q', 'nxt')
+            invalid('NEXT-799W-TN9C-GL3Q', 'nxt')
+        });
+
         it('should return true for correct Syscoin addresses', () => {
             valid('SdzKyvhD2Y3xJvGVSfx96NXszq6x9BZX34', 'sys')
             valid('SSSBZDMVxuZyEMW4s6ar79Cf9UKqy6ZCwf', 'sys')

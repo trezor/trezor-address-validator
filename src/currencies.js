@@ -23,6 +23,7 @@ var IOTAValidator = require('./iota_validator');
 var STEEMValidator = require('./steem_validator');
 var SYSValidator = require('./sys_validator');
 var ZILValidator = require('./zil_validator');
+var NXTValidator = require('./nxt_validator');
 
 // defines P2PKH, P2SH and bech32 address types for standard (prod) and testnet networks
 var CURRENCIES = [
@@ -100,6 +101,10 @@ var CURRENCIES = [
         symbol: 'nmc',
         addressTypes: { prod: ['34'], testnet: [] },
         validator: BTCValidator,
+    }, {
+        name: 'NXT',
+        symbol: 'nxt',
+        validator: NXTValidator,
     }, {
         name: 'BioCoin',
         symbol: 'bio',
