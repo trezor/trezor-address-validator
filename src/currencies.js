@@ -309,6 +309,10 @@ var CURRENCIES = [
         symbol: 'cvc',
         validator: ETHValidator,
     }, {
+        name: 'Own', // Rebranded from Chainium
+        symbol: 'chx',
+        validator: ETHValidator,
+    }, {
         name: 'District0x',
         symbol: 'dnt',
         validator: ETHValidator,
