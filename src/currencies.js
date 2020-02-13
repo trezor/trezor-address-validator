@@ -122,6 +122,10 @@ var CURRENCIES = [
         addressTypes: { prod: ['47', '05'], testnet: ['4a', 'c4', '6f'] },
         validator: BTCValidator,
     }, {
+        name: 'VeChain',
+        symbol: 'ven',
+        validator: ETHValidator,
+    }, {
         name: 'BitcoinGold',
         symbol: 'btg',
         segwitHrp: { prod: 'btg', testnet: 'tbtg' },

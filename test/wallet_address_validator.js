@@ -551,6 +551,11 @@ describe('WAValidator.validate()', function () {
             invalid('NEXT-799W-TN9C-GL3Q', 'nxt')
         });
 
+        it('should return true for correct VeChain addresses', () => {
+            valid('0xA9E5617e2f90427F6db70A3B1d08Fc14706Eb907', 'ven')
+            valid('0xb089B15A00528eEB19fcA4565df80d9a111BFCf9', 'ven')
+        });
+
         it('should return true for correct Syscoin addresses', () => {
             valid('SdzKyvhD2Y3xJvGVSfx96NXszq6x9BZX34', 'sys')
             valid('SSSBZDMVxuZyEMW4s6ar79Cf9UKqy6ZCwf', 'sys')
