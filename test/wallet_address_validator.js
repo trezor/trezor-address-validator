@@ -556,6 +556,11 @@ describe('WAValidator.validate()', function () {
             valid('0xb089B15A00528eEB19fcA4565df80d9a111BFCf9', 'ven')
         });
 
+        it('should return true for correct VeChain Mainnet addresses', () => {
+            valid('0x1374A7E9d5Ed5CFF9c56a0e57B3d8a836a378715', 'vet')
+            valid('0x1374A7E9d5Ed5CFF9c56a0e57B3d8a836a378715', 'vet')
+        });
+
         it('should return true for correct Syscoin addresses', () => {
             valid('SdzKyvhD2Y3xJvGVSfx96NXszq6x9BZX34', 'sys')
             valid('SSSBZDMVxuZyEMW4s6ar79Cf9UKqy6ZCwf', 'sys')

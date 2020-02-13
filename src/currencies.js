@@ -126,6 +126,10 @@ var CURRENCIES = [
         symbol: 'ven',
         validator: ETHValidator,
     }, {
+        name: 'VeChain Mainnet',
+        symbol: 'vet',
+        validator: ETHValidator,
+    }, {
         name: 'BitcoinGold',
         symbol: 'btg',
         segwitHrp: { prod: 'btg', testnet: 'tbtg' },
