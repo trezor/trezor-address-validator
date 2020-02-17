@@ -1022,5 +1022,34 @@ describe('WAValidator.validate()', function () {
             invalid('12345678901@', 'eos');
         });
 
+        it('should return true for correct groestlcoin addresses', function () {
+            valid('Foa6yZoKq2r4t3tUFKFcfoXSQjSodZsGx1', 'groestlcoin');
+            valid('Fr2Z1bLzqRZByt2WeZwWnpCkA1eBYv83wZ', 'groestlcoin');
+            valid('Fr2Z1bLzqRZByt2WeZwWnpCkA1eBYv83wZ', 'GRS');
+            valid('Fr2Z1bLzqRZByt2WeZwWnpCkA1eBYv83wZ', 'Groestlcoin');
+            valid('Fr2Z1bLzqRZByt2WeZwWnpCkA1eBYv83wZ', 'grs');
+            valid('Fr2Z1bLzqRZByt2WeZwWnpCkA1eBYv83wZ', 'grs', 'prod');
+            valid('Fr2Z1bLzqRZByt2WeZwWnpCkA1eBYv83wZ', 'grs', 'both');
+            valid('FpM19fiGQNjNcaRjFaXVX6Nrewr4gnuuMZ', 'grs', 'prod');
+            valid('3FyVFsEyyBPzHjD3qUEgX7Jsn4tcJWiqeN', 'grs', 'prod');
+            valid('38mKdURe1zcQyrFqRLzR8PRao3iLFU5hwU', 'grs', 'prod');
+            valid('mptPo5AvLzJXi4T82vR6g82fT5uJ9cgfsV', 'grs', 'both');
+            valid('FdWcvgskHoXUTqeQRAiuGuh5KQ2EoXv5iM', 'groestlcoin');
+            valid('mzBc4XEFSdzCDcTxAgf6EZXgsZWq3SbMQT', 'groestlcoin', 'testnet');
+            valid('mzBc4XEFSdzCDcTxAgf6EZXgsZWq3SbMQT', 'groestlcoin', 'both');
+
+            // p2sh addresses
+            valid('3NJZLcZEEYBpxYEUGewU4knsQRn1T2Htk2', 'groestlcoin');
+            valid('2MxKEf2su6FGAUfCEAHreGFQvEYrfZDahUf', 'groestlcoin', 'testnet');
+
+            // segwit addresses
+            valid('grs1q49qls5kklryt95g5xx4p6msycpgjp8ramfc9jq', 'grs');
+            valid('grs1qnxt8adg4qk3ljl0qhvp4m0nt56w6ma77vwr2jq', 'grs');
+            valid('tgrs1qw4z3xrtgx4f6w7akwpp2xa0gupmkv4yauemmm9', 'grs', 'testnet');
+
+            invalid("grs1q49qls5kklryt95g5xq4p6msycpgjp8ramfc9jq", 'grs'),
+            invalid("tgrs1qqjd3qhncsxdyh5gt7hz4k6zzvfguslwxwgv23j", 'grs')
+
+        });
     });
 });

@@ -24,6 +24,9 @@ function getChecksum(hashFunction, payload) {
             return cryptoUtils.blake256Checksum(payload);
         case 'keccak256':
             return cryptoUtils.keccak256Checksum(payload);
+        case 'groestl512x2':
+            console.log("Using " + hashFunction + " on " + payload);
+            return cryptoUtils.groestl512x2(payload);
         case 'sha256':
         default:
             return cryptoUtils.sha256Checksum(payload);
@@ -54,6 +57,7 @@ function getAddressType(address, currency) {
             body = cryptoUtils.toHex(decoded.slice(0, length - 4)),
             goodChecksum = getChecksum(hashFunction, body);
 
+        console.log("Found checksum = " + checksum);
         return checksum === goodChecksum ? cryptoUtils.toHex(decoded.slice(0, expectedLength - 24)) : null;
     }
 

@@ -272,6 +272,13 @@ var CURRENCIES = [
         validator: BTCValidator,
         addressTypes: { prod: ['3c'] }
     }, {
+        name: 'Groestlcoin',
+        symbol: 'grs',
+        addressTypes: { prod: ['24', '05'], testnet: ['6f', 'c4'] },
+        segwitHrp: { prod: 'grs', testnet: 'tgrs' },
+        hashFunction: 'groestl512x2',
+        validator: BTCValidator
+    }, {
         name: 'Ethereum',
         symbol: 'eth',
         validator: ETHValidator,

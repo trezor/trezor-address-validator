@@ -61,7 +61,8 @@
     "cbor-js": "^0.1.0",
     "crc": "^3.8.0",
     "jssha": "2.3.1",
-    "@iota/validators": "1.0.0-beta.23"
+    "@iota/validators": "1.0.0-beta.23",
+    "groestl-hash-js": "1.0.0"
   },
   "devDependencies": {
     "browserify": "^16.5.0",
