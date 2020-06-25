@@ -4,8 +4,8 @@ declare module 'trezor-address-validator' {
         symbol: string,
     }
 
-    export declare function validate(address: string, currencyNameOrSymbol: string, networkType?: string): boolean;
-    export declare function getCurrencies(): Currency[];
-    export declare function findCurrency(symbol: string): Currency
+    export function validate(address: string, currencyNameOrSymbol: string, networkType?: string): boolean;
+    export function getCurrencies(): Currency[];
+    export function findCurrency(symbol: string): Currency
 }
 
