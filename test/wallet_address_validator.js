@@ -81,8 +81,6 @@ describe('WAValidator.validate()', function () {
 
             // p2sh addresses
             valid('MUWheVyCBf3Fm3WNNXvotQ3Gj8NTSZCBVe', 'litecoin');
-            
-            valid('2MxKEf2su6FGAUfCEAHreGFQvEYrfYNHvL7', 'litecoin', 'testnet');
             valid('QW2SvwjaJU8LD6GSmtm1PHnBG2xPuxwZFy', 'litecoin', 'testnet');
             valid('QjpzxpbLp5pCGsCczMbfh1uhC3P89QZavY', 'litecoin', 'testnet');
 
@@ -713,6 +711,7 @@ describe('WAValidator.validate()', function () {
             commonTests('litecoin');
             // do not allow old ltc addresses
             invalid('3NJZLcZEEYBpxYEUGewU4knsQRn1WM5Fkt', 'litecoin');
+            invalid('2MxKEf2su6FGAUfCEAHreGFQvEYrfYNHvL7', 'litecoin', 'testnet');
             invalid('vtc1qmzq3erafwvz23yabc9tu45uz2kx3d7esk0rayg', 'litecoin');
             invalid('ltc1qu7wq0evvgnmyyxcc7xhljavc7duu7js7jxhgjl0p390sy4udvtuq7361dl', 'litecoin');
         });

@@ -54,7 +54,7 @@ var CURRENCIES = [
         name: 'LiteCoin',
         symbol: 'ltc',
         segwitHrp: { prod: 'ltc', testnet: 'tltc' },
-        addressTypes: { prod: ['30', '32'], testnet: ['6f', 'c4', '3a'] },
+        addressTypes: { prod: ['30', '32'], testnet: ['6f', '3a'] },
         validator: BTCValidator,
     }, {
         name: 'PeerCoin',
