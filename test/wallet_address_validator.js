@@ -482,6 +482,11 @@ describe('WAValidator.validate()', function () {
             )
         });
 
+        it('should return true for correct BSC addresses', function () {
+            valid('0x0590396689ee1d287147e9383fb8dd24532f2006', 'bsc');
+            valid('0x07fc5c2bcaa0fa6bdaa4fff897490312c8f33c27', 'binance smart chain');
+        });
+
         it('should return false for incorrect Cosmos addresses', () => {
             invalid('cosmo15v50ymp6n5dn73erkqtmq0u8adpl8d3ujv2e74', 'atom')
             invalid('cosmos25v50ymp6n5dn73erkqtmq0u8adpl8d3ujv2e74', 'atom')
