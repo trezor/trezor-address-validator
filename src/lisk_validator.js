@@ -4,10 +4,7 @@ var regexp = new RegExp('^[0-9]{1,20}L$');
 
 module.exports = {
     isValidAddress: function(address) {
-        if (!regexp.test(address)) {
-            return false;
-        }
-        return this.verifyAddress(address)
+        return this.getAddressType(address) === 'ADDR';
     },
 
     getAddressType: function(address) {

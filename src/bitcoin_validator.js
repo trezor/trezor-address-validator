@@ -64,7 +64,7 @@ function getAddressType(address, currency) {
 }
 
 function getOutputIndex(address, currency, networkType) {
-    const correctAddressTypes;
+    let correctAddressTypes;
     const addressType = getAddressType(address, currency);
     if (addressType) {
         if (networkType === 'prod' || networkType === 'testnet') {
@@ -108,13 +108,9 @@ function isValidPayToWitnessPublicKeyHashAddress(address, currency) {
 function isValidPayToTaprootAddress(address) {
     let decoded = null;
     try {
-        decoded = bech32.decode(address);
+        decoded = bech32m.decode(address);
     } catch (err) {
-        try {
-            decoded = bech32m.decode(address);
-        } catch (err) {
-            return null;
-        }
+        return null;
     }
     const version = decoded.words[0];
     return version === 1;
