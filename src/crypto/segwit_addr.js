@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-var bech32 = require('./bech32');
+var { bech32 } = require('bech32');
 
 function convertbits(data, frombits, tobits, pad) {
   var acc = 0;
@@ -48,18 +48,22 @@ function convertbits(data, frombits, tobits, pad) {
 }
 
 function decode(hrp, addr) {
-  var dec = bech32.decode(addr);
-  if (dec === null || dec.hrp !== hrp || dec.data.length < 1 || dec.data[0] > 16) {
+  try {
+    var dec = bech32.decode(addr);
+  } catch(err) {
     return null;
   }
-  var res = convertbits(dec.data.slice(1), 5, 8, false);
+  if (dec === null || dec.prefix !== hrp || dec.words.length < 1 || dec.words[0] > 16) {
+    return null;
+  }
+  var res = convertbits(dec.words.slice(1), 5, 8, false);
   if (res === null || res.length < 2 || res.length > 40) {
     return null;
   }
-  if (dec.data[0] === 0 && res.length !== 20 && res.length !== 32) {
+  if (dec.words[0] === 0 && res.length !== 20 && res.length !== 32) {
     return null;
   }
-  return { version: dec.data[0], program: res };
+  return { version: dec.words[0], program: res };
 }
 
 function encode(hrp, version, program) {
