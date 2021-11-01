@@ -75,6 +75,7 @@ describe('WAValidator.validate()', function () {
             isValidAddressType('bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej', 'bitcoin', 'prod', 'P2WSH');
             isValidAddressType('bc1qr0c0jscha3tzr7963zz4u2wsezsxvpzkwmrvhg', 'bitcoin', 'prod', 'P2WPKH');
             isValidAddressType('bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr', 'bitcoin', 'prod', 'P2TR');
+            isValidAddressType('bc1pqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqsyjer9e', 'bitcoin', 'prod', 'P2TR');
             isValidAddressType('bc1sw50qgdz25j', 'bitcoin', 'prod', 'WITNESS_UNKNOWN');
             isValidAddressType('BC1SW50QA3JX3S', 'bitcoin', 'prod', 'WITNESS_UNKNOWN'); // Is this correct?
             isValidAddressType('qwerty', 'bitcoin', 'prod', undefined);
