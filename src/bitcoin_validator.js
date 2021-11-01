@@ -149,27 +149,21 @@ module.exports = {
     getAddressType: function(address, currency, networkType) {
         networkType = networkType || DEFAULT_NETWORK_TYPE;
         if (isValidPayToPublicKeyHashAddress(address, currency, networkType)) {
-            console.log(address, 'P2PKH');
             return 'P2PKH';
         }
         if (isValidPayToScriptHashAddress(address, currency, networkType)) {
-            console.log(address, 'P2SH');
             return 'P2SH';
         }
         if (isValidPayToWitnessScriptHashAddress(address)) {
-            console.log(address, 'P2WSH');
             return 'P2WSH';
         }
         if (isValidPayToWitnessPublicKeyHashAddress(address)) {
-            console.log(address, 'P2WPKH');
             return 'P2WPKH';
         }
         if (isValidPayToTaprootAddress(address)) {
-            console.log(address, 'P2TR');
             return 'P2TR';
         }
         if (isValidWitnessUnknownAddress(address) || segwit.isValidAddress(address, currency, networkType)) {
-            console.log(address, 'WITNESS_UNKNOWN');
             return 'WITNESS_UNKNOWN';
         }
         return undefined;
