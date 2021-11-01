@@ -12,6 +12,16 @@ module.exports = {
 
         throw new Error('Missing validator for currency: ' + currencyNameOrSymbol);
     },
+    getAddressType: function(address, currencyNameOrSymbol, networkType) {
+        var currency = currencies.getByNameOrSymbol(currencyNameOrSymbol || DEFAULT_CURRENCY_NAME);
+        if (!currency || !currency.validator) {
+            throw new Error('getAddressType: No validator for currency' + currencyNameOrSymbol);
+        }
+        if (currency && currency.validator && currency.validator.getAddressType) {
+            return currency.validator.getAddressType(address, currency, networkType);
+        }
+        throw new Error('getAddressType not defined for currency: ' + currencyNameOrSymbol);
+    },
     getCurrencies: function () {
         return currencies.getAll();
     },

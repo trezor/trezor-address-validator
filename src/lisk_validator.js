@@ -10,6 +10,15 @@ module.exports = {
         return this.verifyAddress(address)
     },
 
+    getAddressType: function(address) {
+        if (!regexp.test(address)) {
+            return undefined;
+        }
+        if(this.verifyAddress(address)) {
+            return "ADDR";
+        }
+    },
+
     verifyAddress: function(address) {
         var BUFFER_SIZE = 8;
         var bigNumber = address.substring(0, address.length - 1);

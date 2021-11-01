@@ -5,6 +5,11 @@ var chai = isNode ? require('chai') : window.chai,
 
 var WAValidator = isNode ? require('../src/wallet_address_validator') : window.WAValidator
 
+function isValidAddressType(address, currency, networkType, addressType) {
+    const type = WAValidator.getAddressType(address, currency, networkType);
+    expect(type).to.equal(addressType);
+}
+
 function valid(address, currency, networkType) {
     var valid = WAValidator.validate(address, currency, networkType);
     expect({ address, currency, valid }).to.deep.equal({ address, currency, valid: true });
@@ -64,6 +69,18 @@ describe('WAValidator.validate()', function () {
             invalid("bc1gmk9yu", 'bitcoin');
         });
 
+        it('should match the expected bitcoin address type', function () {
+            isValidAddressType('1NSAR5mUUL3qZP29BfFj5jBPR5yWiiZZWi', 'bitcoin', 'prod', 'P2PKH');
+            isValidAddressType('3CgkdgWwZ1RJGyHfcYnDe2qGTwaAtifeQw', 'bitcoin', 'prod', 'P2SH');
+            isValidAddressType('bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej', 'bitcoin', 'prod', 'P2WSH');
+            isValidAddressType('bc1qr0c0jscha3tzr7963zz4u2wsezsxvpzkwmrvhg', 'bitcoin', 'prod', 'P2WPKH');
+            isValidAddressType('bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr', 'bitcoin', 'prod', 'P2TR');
+            isValidAddressType('bc1pqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs3wf0qm', 'bitcoin', 'prod', 'P2TR');
+            isValidAddressType('bc1sw50qgdz25j', 'bitcoin', 'prod', 'WITNESS_UNKNOWN');
+            isValidAddressType('BC1SW50QA3JX3S', 'bitcoin', 'prod', 'WITNESS_UNKNOWN'); // Is this correct?
+            isValidAddressType('qwerty', 'bitcoin', 'prod', undefined);
+        });
+
         it('should return true for correct bitcoincash addresses', function () {
             valid('bitcoincash:qq4v32mtagxac29my6gwj6fd4tmqg8rysu23dax807', 'bch');
             valid('bitcoincash:qp3wjpa3tjlj042z2wv7hahsldgwhwy0rq9sywjpyy', 'bch');            
@@ -90,6 +107,11 @@ describe('WAValidator.validate()', function () {
             valid('ltc1qajkrze8gc5qdx2ehldsmd596a2gprnn50a53mj3xxvy0zgtdq6gqumv03a', 'litecoin');
         });
 
+        it('should match the expected litecoin address type', function () {
+            isValidAddressType('LVg2kJoFNg45Nbpy53h7Fe1wKyeXVRhMH9', 'litecoin', 'prod', 'P2PKH');
+            isValidAddressType('ltc1qajkrze8gc5qdx2ehldsmd596a2gprnn50a53mj3xxvy0zgtdq6gqumv03a', 'litecoin', 'prod', 'P2WSH');
+        });
+
         it('should return true for correct peercoin addresses', function () {
             valid('PHCEsP6od3WJ8K2WKWEDBYKhH95pc9kiZN', 'peercoin');
             valid('PSbM1pGoE9dnAuVWvpQqTTYVpKZU41dNAz', 'peercoin');
@@ -112,6 +134,12 @@ describe('WAValidator.validate()', function () {
             //p2sh addresses
             valid('A7JjzK9k9x5b2MkkQzqt91WZsuu7wTu6iS', 'dogecoin');
             valid('2MxKEf2su6FGAUfCEAHreGFQvEYrfYNHvL7', 'dogecoin', 'testnet');
+        });
+
+        it('should match the expected dogecoin address type', function () {
+            isValidAddressType('DMqRVLrhbam3Kcfddpxd6EYvEBbpi3bEpP', 'dogecoin', 'prod', 'P2PKH')
+            isValidAddressType('A7JjzK9k9x5b2MkkQzqt91WZsuu7wTu6iS', 'dogecoin', 'prod', 'P2SH')
+            isValidAddressType('qwerty', 'dogecoin', 'prod', undefined);
         });
 
         it('should return true for correct beavercoin addresses', function () {
@@ -618,7 +646,12 @@ describe('WAValidator.validate()', function () {
             valid('530464791801L', 'lsk');
         });
 
+        it('should match the expected lsk address type', function () {
+            isValidAddressType('469226551L', 'lsk', 'prod', 'ADDR');
+        });
+
         it('should return true for correct bsv addresses', function () {
+            // isValidAddressType('qzwryn9fxnpqkf7zt878tp2g9cg8kpl65qh2ml0w0r', 'bsv', 'ADDR');
             valid('qzwryn9fxnpqkf7zt878tp2g9cg8kpl65qh2ml0w0r', 'bsv');
             valid('qp65yngy5uds4wxtrkynptal4f76qzmrh52pa3mpaf', 'bsv');
             valid('bitcoincash:qq4v32mtagxac29my6gwj6fd4tmqg8rysu23dax807', 'bsv');

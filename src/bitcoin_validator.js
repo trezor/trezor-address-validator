@@ -1,3 +1,4 @@
+const { bech32, bech32m } = require('bech32');
 var base58 = require('./crypto/base58');
 var segwit = require('./crypto/segwit_addr');
 var cryptoUtils = require('./crypto/utils');
@@ -62,26 +63,119 @@ function getAddressType(address, currency) {
     return null;
 }
 
-function isValidP2PKHandP2SHAddress(address, currency, networkType) {
-    var correctAddressTypes;
-    var addressType = getAddressType(address, currency);
-
+function getOutputIndex(address, currency, networkType) {
+    const correctAddressTypes;
+    const addressType = getAddressType(address, currency);
     if (addressType) {
         if (networkType === 'prod' || networkType === 'testnet') {
             correctAddressTypes = currency.addressTypes[networkType]
         } else {
             correctAddressTypes = currency.addressTypes.prod.concat(currency.addressTypes.testnet);
         }
-
-        return correctAddressTypes.indexOf(addressType) >= 0;
+        return correctAddressTypes.indexOf(addressType);
     }
+    return null;
+}
 
-    return false;
+function isValidPayToPublicKeyHashAddress(address, currency, networkType) {
+    return getOutputIndex(address, currency, networkType) === 0;
+}
+
+function isValidPayToScriptHashAddress(address, currency, networkType) {
+    return getOutputIndex(address, currency, networkType) > 0;
+}
+
+function isValidPayToWitnessScriptHashAddress(address) {
+    try {
+        const decoded = bech32.decode(address);
+        const version = decoded.words[0];
+        return version === 0 && decoded.words.length - 1 === 52; // 52 characters for 32-byte witness programs like P2WSH or P2TR
+    } catch (err) {
+        return null;
+    }
+}
+
+function isValidPayToWitnessPublicKeyHashAddress(address, currency) {
+    try {
+        const decoded = bech32.decode(address);
+        const version = decoded.words[0];
+        return version === 0 && decoded.words.length - 1 === 32; // 32 characters for 20-byte witness programs like P2WPKH
+    } catch (err) {
+        return null;
+    }
+}
+
+function isValidPayToTaprootAddress(address) {
+    let decoded = null;
+    try {
+        decoded = bech32.decode(address);
+    } catch (err) {
+        try {
+            decoded = bech32m.decode(address);
+        } catch (err) {
+            return null;
+        }
+    }
+    const version = decoded.words[0];
+    return version === 1;
+}
+
+function isValidWitnessUnknownAddress(address) {
+    try {
+        const decoded = bech32.decode(address);
+        const version = decoded.words[0];
+        return (
+            version === 0 &&
+            decoded.words.length - 1 !== 32 && // Not P2WSH or P2TR
+            decoded.words.length - 1 !== 52 // Not P2WPKH
+        );
+    } catch (err) {
+        try {
+            const decoded = bech32m.decode(address);
+            const version = decoded.words[0];
+            return version > 1;
+        } catch (err) {
+            return null;
+        }
+    }
 }
 
 module.exports = {
     isValidAddress: function (address, currency, networkType) {        
         networkType = networkType || DEFAULT_NETWORK_TYPE;
-        return isValidP2PKHandP2SHAddress(address, currency, networkType) || segwit.isValidAddress(address, currency, networkType);
-    }
+        // return ['WITNESS_UNKNOWN', undefined].includes(this.getAddressType(address, currency, networkType)) === false;
+        return (
+            isValidPayToPublicKeyHashAddress(address, currency, networkType) ||
+            isValidPayToScriptHashAddress(address, currency, networkType) ||
+            segwit.isValidAddress(address, currency, networkType)
+        ); // Is this correct?
+    },
+    getAddressType: function(address, currency, networkType) {
+        networkType = networkType || DEFAULT_NETWORK_TYPE;
+        if (isValidPayToPublicKeyHashAddress(address, currency, networkType)) {
+            console.log(address, 'P2PKH');
+            return 'P2PKH';
+        }
+        if (isValidPayToScriptHashAddress(address, currency, networkType)) {
+            console.log(address, 'P2SH');
+            return 'P2SH';
+        }
+        if (isValidPayToWitnessScriptHashAddress(address)) {
+            console.log(address, 'P2WSH');
+            return 'P2WSH';
+        }
+        if (isValidPayToWitnessPublicKeyHashAddress(address)) {
+            console.log(address, 'P2WPKH');
+            return 'P2WPKH';
+        }
+        if (isValidPayToTaprootAddress(address)) {
+            console.log(address, 'P2TR');
+            return 'P2TR';
+        }
+        if (isValidWitnessUnknownAddress(address) || segwit.isValidAddress(address, currency, networkType)) {
+            console.log(address, 'WITNESS_UNKNOWN');
+            return 'WITNESS_UNKNOWN';
+        }
+        return undefined;
+    },
 };
