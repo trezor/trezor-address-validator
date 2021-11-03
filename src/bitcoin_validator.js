@@ -144,10 +144,9 @@ function isValidSegwitAddress(address, currency, networkType) {
 module.exports = {
     isValidAddress: function (address, currency, networkType) {        
         networkType = networkType || DEFAULT_NETWORK_TYPE;
-        const addressType = this.getAddressType(address, currency, networkType);
+        const addrType = this.getAddressType(address, currency, networkType);
         // Though WITNESS_UNKNOWN is a valid address, it's not spendable - so we mark it as invalid
-        // return addressType !== undefined && addressType !== 'WITNESS_UNKNOWN';
-        return addressType !== undefined;
+        return addrType !== undefined && addrType !== addressType.WITNESS_UNKNOWN;
     },
     getAddressType: function(address, currency, networkType) {
         networkType = networkType || DEFAULT_NETWORK_TYPE;
