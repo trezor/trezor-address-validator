@@ -1,4 +1,4 @@
-const { bech32, bech32m } = require('bech32');
+var bech32 = require('./crypto/bech32');
 var base58 = require('./crypto/base58');
 var cryptoUtils = require('./crypto/utils');
 
@@ -76,33 +76,6 @@ function getOutputIndex(address, currency, networkType) {
     return null;
 }
 
-function convertbits(data, frombits, tobits, pad) {
-  var acc = 0;
-  var bits = 0;
-  var ret = [];
-  var maxv = (1 << tobits) - 1;
-  for (var p = 0; p < data.length; ++p) {
-    var value = data[p];
-    if (value < 0 || (value >> frombits) !== 0) {
-      return null;
-    }
-    acc = (acc << frombits) | value;
-    bits += frombits;
-    while (bits >= tobits) {
-      bits -= tobits;
-      ret.push((acc >> bits) & maxv);
-    }
-  }
-  if (pad) {
-    if (bits > 0) {
-      ret.push((acc << (tobits - bits)) & maxv);
-    }
-  } else if (bits >= frombits || ((acc << (tobits - bits)) & maxv)) {
-    return null;
-  }
-  return ret;
-}
-
 function isValidPayToPublicKeyHashAddress(address, currency, networkType) {
     return getOutputIndex(address, currency, networkType) === 0;
 }
@@ -114,7 +87,7 @@ function isValidPayToScriptHashAddress(address, currency, networkType) {
 function isValidPayToWitnessScriptHashAddress(address, currency, networkType) {
     try {
         const hrp = currency.segwitHrp[networkType];
-        const decoded = decode(hrp, address);
+        const decoded = bech32.decode(hrp, address);
         return decoded?.version === 0 && decoded?.program.length === 32;
     } catch (err) {
         return null;
@@ -124,7 +97,7 @@ function isValidPayToWitnessScriptHashAddress(address, currency, networkType) {
 function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType) {
     try {
         const hrp = currency.segwitHrp[networkType];
-        const decoded = decode(hrp, address);
+        const decoded = bech32.decode(hrp, address);
         return decoded?.version === 0 && decoded?.program.length === 20;
     } catch (err) {
         return null;
@@ -134,50 +107,10 @@ function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType)
 function isValidPayToTaprootAddress(address, currency, networkType) {
     try {
         const hrp = currency.segwitHrp[networkType];
-        decoded = decode(hrp, address, true);
+        decoded = bech32.decode(hrp, address, true);
         return decoded?.version === 1 && decoded?.program.length === 32;
     } catch (err) {}
     return null;
-}
-
-function decode(hrp, addr, m = false) {
-    let dec;
-    try {
-        if (m) {
-            dec = bech32m.decode(addr);
-        } else {
-            dec = bech32.decode(addr);
-        }
-    } catch (err) {
-        return null;
-    }
-    const version = dec?.words[0];
-    if (
-        dec === null ||
-        dec.prefix !== hrp ||
-        dec.words.length < 1 ||
-        version > 16
-    ) {
-        return null;
-    }
-    var res = convertbits(dec.words.slice(1), 5, 8, false);
-    if (res === null || res.length < 2 || res.length > 40) {
-        return null;
-    }
-    return { version, program: res };
-}
-
-function encode(hrp, version, program, m = false) {
-    var ret;
-    if (m) {
-        ret = bech32m.encode(hrp, [version].concat(convertbits(program, 8, 5, true)));
-    } else {
-        ret = bech32.encode( hrp, [version].concat(convertbits(program, 8, 5, true)));
-    }
-    if (decode(hrp, ret, m) === null) {
-        return null;
-    }
-    return ret;
 }
 
 function isValidSegwitAddress(address, currency, networkType) {
@@ -189,19 +122,19 @@ function isValidSegwitAddress(address, currency, networkType) {
         return false;
     }
     // try bech32 first
-    let ret = decode(hrp, address, false);
+    let ret = bech32.decode(hrp, address, false);
     if (ret) {
         if (ret.version === 0 || ret.program.length === 20 || ret.program.length === 32) {
             return false;
         } else {
-            return address.toLowerCase() === encode(hrp, ret.version, ret.program, false);
+            return address.toLowerCase() === bech32.encode(hrp, ret.version, ret.program, false);
         }
     }
     // then try bech32m
-    ret = decode(hrp, address, true);
+    ret = bech32.decode(hrp, address, true);
     if (ret) {
         if (ret.version > 1 || ret.program.length !== 32) {
-            return address.toLowerCase() === encode(hrp, ret.version, ret.program, true);
+            return address.toLowerCase() === bech32.encode(hrp, ret.version, ret.program, true);
         }
     }
     return false;
