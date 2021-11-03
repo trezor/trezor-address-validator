@@ -80,5 +80,12 @@ module.exports = {
     isValidAddress: function (address, currency, networkType) {
         return validateAddress(address, currency, networkType) ||
             (currency.symbol !== 'bch' && BTCValidator.isValidAddress(address, currency, networkType));
+    },
+    getAddressType: function(address, currency, networkType) {
+        networkType = networkType || DEFAULT_NETWORK_TYPE;
+        if (this.isValidAddress(address, currency, networkType)) {
+            return 'ADDR';
+        }
+        return undefined;
     }
 }
