@@ -103,33 +103,6 @@ function convertbits(data, frombits, tobits, pad) {
   return ret;
 }
 
-function decodeBech32(hrp, addr, m = false) {
-    var dec;
-    try {
-        if (m) {
-            dec = bech32m.decode(addr);
-        } else {
-            dec = bech32.decode(addr);
-        }
-    } catch (err) {
-        return null;
-    }
-    const version = dec?.words[0];
-    if (
-        dec === null ||
-        dec.prefix !== hrp ||
-        dec.words.length < 1 ||
-        version > 16
-    ) {
-        return null;
-    }
-    var res = convertbits(dec.words.slice(1), 5, 8, false);
-    if (res === null || res.length < 2 || res.length > 40) {
-        return null;
-    }
-    return { version, program: res };
-}
-
 function isValidPayToPublicKeyHashAddress(address, currency, networkType) {
     return getOutputIndex(address, currency, networkType) === 0;
 }
@@ -141,7 +114,7 @@ function isValidPayToScriptHashAddress(address, currency, networkType) {
 function isValidPayToWitnessScriptHashAddress(address, currency, networkType) {
     try {
         const hrp = currency.segwitHrp[networkType];
-        const decoded = decodeBech32(hrp, address);
+        const decoded = decode(hrp, address);
         return decoded?.version === 0 && decoded?.program.length === 32;
     } catch (err) {
         return null;
@@ -151,7 +124,7 @@ function isValidPayToWitnessScriptHashAddress(address, currency, networkType) {
 function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType) {
     try {
         const hrp = currency.segwitHrp[networkType];
-        const decoded = decodeBech32(hrp, address);
+        const decoded = decode(hrp, address);
         return decoded?.version === 0 && decoded?.program.length === 20;
     } catch (err) {
         return null;
@@ -161,7 +134,7 @@ function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType)
 function isValidPayToTaprootAddress(address, currency, networkType) {
     try {
         const hrp = currency.segwitHrp[networkType];
-        decoded = decodeBech32(hrp, address, true);
+        decoded = decode(hrp, address, true);
         return decoded?.version === 1 && decoded?.program.length === 32;
     } catch (err) {}
     return null;
