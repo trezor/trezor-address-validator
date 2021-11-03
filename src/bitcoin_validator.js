@@ -1,6 +1,5 @@
 const { bech32, bech32m } = require('bech32');
 var base58 = require('./crypto/base58');
-var segwit = require('./crypto/segwit_addr');
 var cryptoUtils = require('./crypto/utils');
 
 var DEFAULT_NETWORK_TYPE = 'prod';
@@ -77,6 +76,60 @@ function getOutputIndex(address, currency, networkType) {
     return null;
 }
 
+function convertbits(data, frombits, tobits, pad) {
+  var acc = 0;
+  var bits = 0;
+  var ret = [];
+  var maxv = (1 << tobits) - 1;
+  for (var p = 0; p < data.length; ++p) {
+    var value = data[p];
+    if (value < 0 || (value >> frombits) !== 0) {
+      return null;
+    }
+    acc = (acc << frombits) | value;
+    bits += frombits;
+    while (bits >= tobits) {
+      bits -= tobits;
+      ret.push((acc >> bits) & maxv);
+    }
+  }
+  if (pad) {
+    if (bits > 0) {
+      ret.push((acc << (tobits - bits)) & maxv);
+    }
+  } else if (bits >= frombits || ((acc << (tobits - bits)) & maxv)) {
+    return null;
+  }
+  return ret;
+}
+
+function decodeBech32(hrp, addr, m = false) {
+    var dec;
+    try {
+        if (m) {
+            dec = bech32m.decode(addr);
+        } else {
+            dec = bech32.decode(addr);
+        }
+    } catch (err) {
+        return null;
+    }
+    const version = dec?.words[0];
+    if (
+        dec === null ||
+        dec.prefix !== hrp ||
+        dec.words.length < 1 ||
+        version > 16
+    ) {
+        return null;
+    }
+    var res = convertbits(dec.words.slice(1), 5, 8, false);
+    if (res === null || res.length < 2 || res.length > 40) {
+        return null;
+    }
+    return { version, program: res };
+}
+
 function isValidPayToPublicKeyHashAddress(address, currency, networkType) {
     return getOutputIndex(address, currency, networkType) === 0;
 }
@@ -87,29 +140,19 @@ function isValidPayToScriptHashAddress(address, currency, networkType) {
 
 function isValidPayToWitnessScriptHashAddress(address, currency, networkType) {
     try {
-        const decoded = bech32.decode(address);
-        if (!isValidSegwitHrp(decoded.prefix, currency, networkType)) {
-            return null;
-        }
-        const version = decoded.words[0];
-        return version === 0 && decoded.words.length - 1 === 52; // 52 characters for 32-byte witness programs like P2WSH or P2TR
+        const hrp = currency.segwitHrp[networkType];
+        const decoded = decodeBech32(hrp, address);
+        return decoded.version === 0 && decoded.program.length === 32;
     } catch (err) {
         return null;
     }
 }
 
-function isValidSegwitHrp(prefix, currency, networkType) {
-    return currency.segwitHrp?.[networkType] === prefix;
-}
-
 function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType) {
     try {
-        const decoded = bech32.decode(address);
-        if (!isValidSegwitHrp(decoded.prefix, currency, networkType)) {
-            return null;
-        }
-        const version = decoded.words[0];
-        return version === 0 && decoded.words.length - 1 === 32; // 32 characters for 20-byte witness programs like P2WPKH
+        const hrp = currency.segwitHrp[networkType];
+        const decoded = decodeBech32(hrp, address);
+        return decoded.version === 0 && decoded.program.length === 20;
     } catch (err) {
         return null;
     }
@@ -126,31 +169,77 @@ function isValidPayToTaprootAddress(address) {
     return version === 1;
 }
 
-function isValidWitnessUnknownAddress(address) {
+function decode(hrp, addr, m = false) {
+    let dec;
     try {
-        const decoded = bech32.decode(address);
-        const version = decoded.words[0];
-        return (
-            version === 0 &&
-            decoded.words.length - 1 !== 32 && // Not P2WSH or P2TR
-            decoded.words.length - 1 !== 52 // Not P2WPKH
-        );
+        if (m) {
+            dec = bech32m.decode(addr);
+        } else {
+            dec = bech32.decode(addr);
+        }
     } catch (err) {
-        try {
-            const decoded = bech32m.decode(address);
-            const version = decoded.words[0];
-            return version > 1;
-        } catch (err) {
-            return null;
+        return null;
+    }
+    const version = dec?.words[0];
+    if (
+        dec === null ||
+        dec.prefix !== hrp ||
+        dec.words.length < 1 ||
+        version > 16
+    ) {
+        return null;
+    }
+    var res = convertbits(dec.words.slice(1), 5, 8, false);
+    if (res === null || res.length < 2 || res.length > 40) {
+        return null;
+    }
+    return { version, program: res };
+}
+
+function encode(hrp, version, program, m = false) {
+    var ret;
+    if (m) {
+        ret = bech32m.encode(hrp, [version].concat(convertbits(program, 8, 5, true)));
+    } else {
+        ret = bech32.encode( hrp, [version].concat(convertbits(program, 8, 5, true)));
+    }
+    if (decode(hrp, ret, m) === null) {
+        return null;
+    }
+    return ret;
+}
+
+function isValidAddress(address, currency, networkType, m = false) {
+    if (!currency.segwitHrp) {
+        return false;
+    }
+    var hrp = currency.segwitHrp[networkType];
+    if (!hrp) {
+        return false;
+    }
+    var ret = decode(hrp, address, m);
+    if (ret === null) {
+        return false;
+    }
+    if (m) {
+        // I don't get this, how it's not 'version > 1'?
+        if (ret.version <= 1) {
+            return false;
+        }
+    } else {
+        if (ret.version === 0 && ret.program.length !== 20 && ret.program.length !== 32) {
+            return false;
         }
     }
+    return address.toLowerCase() === encode(hrp, ret.version, ret.program, m);
 }
 
 module.exports = {
     isValidAddress: function (address, currency, networkType) {        
         networkType = networkType || DEFAULT_NETWORK_TYPE;
         // Though WITNESS_UNKNOWN is a valid address, it's not spendable - so we mark it as invalid
-        return [undefined, 'WITNESS_UNKNOWN'].includes(this.getAddressType(address, currency, networkType)) === false;
+        // return [undefined, 'WITNESS_UNKNOWN'].includes(this.getAddressType(address, currency, networkType)) === false;
+        return [undefined].includes(this.getAddressType(address, currency, networkType)) === false;
     },
     getAddressType: function(address, currency, networkType) {
         networkType = networkType || DEFAULT_NETWORK_TYPE;
@@ -169,7 +258,12 @@ module.exports = {
         if (isValidPayToTaprootAddress(address)) {
             return 'P2TR';
         }
-        if (isValidWitnessUnknownAddress(address) || segwit.isValidAddress(address, currency, networkType)) {
+        // bech32
+        if (isValidAddress(address, currency, networkType)) {
+            return 'WITNESS_UNKNOWN';
+        }
+        // bech32m
+        if (isValidAddress(address, currency, networkType, true)) {
             return 'WITNESS_UNKNOWN';
         }
         return undefined;
