@@ -142,7 +142,7 @@ function isValidPayToWitnessScriptHashAddress(address, currency, networkType) {
     try {
         const hrp = currency.segwitHrp[networkType];
         const decoded = decodeBech32(hrp, address);
-        return decoded.version === 0 && decoded.program.length === 32;
+        return decoded?.version === 0 && decoded?.program.length === 32;
     } catch (err) {
         return null;
     }
@@ -152,7 +152,7 @@ function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType)
     try {
         const hrp = currency.segwitHrp[networkType];
         const decoded = decodeBech32(hrp, address);
-        return decoded.version === 0 && decoded.program.length === 20;
+        return decoded?.version === 0 && decoded?.program.length === 20;
     } catch (err) {
         return null;
     }
@@ -162,7 +162,7 @@ function isValidPayToTaprootAddress(address, currency, networkType) {
     try {
         const hrp = currency.segwitHrp[networkType];
         decoded = decodeBech32(hrp, address, true);
-        return decoded && decoded.version === 1 && decoded.program.length === 32;
+        return decoded?.version === 1 && decoded?.program.length === 32;
     } catch (err) {}
     return null;
 }
@@ -215,13 +215,21 @@ function isValidAddress(address, currency, networkType) {
     if (!hrp) {
         return false;
     }
-    let ret = decode(hrp, address, false); // try bech32 first
-    if (ret && (ret.version !== 0 || ret.program.length === 20 || ret.program.length === 32)) {
-        return address.toLowerCase() === encode(hrp, ret.version, ret.program, false);
+    // try bech32 first
+    let ret = decode(hrp, address, false);
+    if (ret) {
+        if (ret.version === 0 || ret.program.length === 20 || ret.program.length === 32) {
+            return false;
+        } else {
+            return address.toLowerCase() === encode(hrp, ret.version, ret.program, false);
+        }
     }
-    ret = decode(hrp, address, true); // then try bech32m
-    if (ret && ret.version > 1) {
-        return address.toLowerCase() === encode(hrp, ret.version, ret.program, true);
+    // then try bech32m
+    ret = decode(hrp, address, true);
+    if (ret) {
+        if (ret.version > 1 || ret.program.length !== 32) {
+            return address.toLowerCase() === encode(hrp, ret.version, ret.program, true);
+        }
     }
     return false;
 }
