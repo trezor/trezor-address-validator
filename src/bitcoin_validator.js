@@ -207,7 +207,7 @@ function encode(hrp, version, program, m = false) {
     return ret;
 }
 
-function isValidAddress(address, currency, networkType) {
+function isValidSegwitAddress(address, currency, networkType) {
     if (!currency.segwitHrp) {
         return false;
     }
@@ -259,7 +259,7 @@ module.exports = {
         if (isValidPayToTaprootAddress(address, currency, networkType)) {
             return 'P2TR';
         }
-        if (isValidAddress(address, currency, networkType)) {
+        if (isValidSegwitAddress(address, currency, networkType)) {
             return 'WITNESS_UNKNOWN';
         }
         return undefined;
