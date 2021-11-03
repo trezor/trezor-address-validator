@@ -1165,6 +1165,10 @@ var CURRENCIES = [
         symbol: 'luniverse',
         validator: ETHValidator,
     }, {
+        name: 'Binance Smart Chain',
+        symbol: 'bsc',
+        validator: ETHValidator,
+    }, {
         name: 'Binance',
         symbol: 'bnb',
         validator: BinanceValidator,

@@ -1,3 +1,4 @@
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils');
 
 function decodeBase58Address(base58Sting) {
@@ -57,5 +58,12 @@ module.exports = {
         }
 
         return getEnv(currency, networkType) === address[0];
-    }
+    },
+
+    getAddressType: function (address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
 };

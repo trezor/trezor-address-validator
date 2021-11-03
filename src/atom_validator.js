@@ -1,4 +1,5 @@
-var utils = require('./crypto/utils')
+const { addressType } = require('../src/crypto/utils');
+const { bech32 } = require('bech32');
 
 const ALLOWED_CHARS = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
 
@@ -6,21 +7,19 @@ var regexp = new RegExp('^(cosmos)1([' + ALLOWED_CHARS + ']+)$') // cosmos + bec
 
 module.exports = {
   isValidAddress: function (address, currency, networkType) {
-    let match = regexp.exec(address)
-    if (match !== null) {
-      return this.verifyChecksum(address)
-    } else {
-      return false
-    }
+    return regexp.exec(address) !== null;
   },
 
   verifyChecksum: function (address) {
-    var decoded = utils.bech32.decode(address)
-    if (decoded !== null) {
-      return decoded.data.length === 32
-    } else {
-      return false
-    }
-  }
+    const decoded = bech32.decode(address);
+    return decoded?.words.length === 32;
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 

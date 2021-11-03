@@ -1,6 +1,7 @@
 var bech32 = require('./crypto/bech32');
 var base58 = require('./crypto/base58');
 var cryptoUtils = require('./crypto/utils');
+const { addressType } = require('./crypto/utils');
 
 var DEFAULT_NETWORK_TYPE = 'prod';
 
@@ -151,22 +152,22 @@ module.exports = {
     getAddressType: function(address, currency, networkType) {
         networkType = networkType || DEFAULT_NETWORK_TYPE;
         if (isValidPayToPublicKeyHashAddress(address, currency, networkType)) {
-            return 'P2PKH';
+            return addressType.P2PKH;
         }
         if (isValidPayToScriptHashAddress(address, currency, networkType)) {
-            return 'P2SH';
+            return addressType.P2SH;
         }
         if (isValidPayToWitnessScriptHashAddress(address, currency, networkType)) {
-            return 'P2WSH';
+            return addressType.P2WSH;
         }
         if (isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType)) {
-            return 'P2WPKH';
+            return addressType.P2WPKH;
         }
         if (isValidPayToTaprootAddress(address, currency, networkType)) {
-            return 'P2TR';
+            return addressType.P2TR;
         }
         if (isValidSegwitAddress(address, currency, networkType)) {
-            return 'WITNESS_UNKNOWN';
+            return addressType.WITNESS_UNKNOWN;
         }
         return undefined;
     },

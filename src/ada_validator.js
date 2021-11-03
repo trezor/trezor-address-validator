@@ -1,3 +1,4 @@
+const { addressType } = require('../src/crypto/utils');
 var cbor = require('cbor-js');
 var CRC = require('crc');
 var base58 = require('./crypto/base58');
@@ -62,5 +63,11 @@ module.exports = {
         networkType = networkType || DEFAULT_NETWORK_TYPE;
         return isValidLegacyAddress(address)
             || isValidBech32Address(address, currency, networkType);
-    }
+    },
+    getAddressType: function(address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
 };

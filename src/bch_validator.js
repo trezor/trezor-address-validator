@@ -1,3 +1,4 @@
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils');
 var BTCValidator = require('./bitcoin_validator');
 
@@ -84,7 +85,7 @@ module.exports = {
     getAddressType: function(address, currency, networkType) {
         networkType = networkType || DEFAULT_NETWORK_TYPE;
         if (this.isValidAddress(address, currency, networkType)) {
-            return 'ADDR';
+            return addressType.ADDRESS;
         }
         return undefined;
     }

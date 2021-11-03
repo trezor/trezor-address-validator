@@ -1,3 +1,4 @@
+const { addressType } = require('../src/crypto/utils');
 module.exports = {
   isValidAddress: function (address) {
       var binanceAddress = address.slice(address.indexOf('bnb'));
@@ -5,5 +6,12 @@ module.exports = {
           return false;
       }
       return true;
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
   },
 };

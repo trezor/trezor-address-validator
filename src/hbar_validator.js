@@ -1,3 +1,4 @@
+const { addressType } = require('../src/crypto/utils');
 function isValidHBarAddress (address) {
   const split = address.split('.')
   if (split[0] !== '0' || split[1] !== '0') {
@@ -11,6 +12,13 @@ function isValidHBarAddress (address) {
 module.exports = {
   isValidAddress: function (address, currency, networkType) {
     return isValidHBarAddress(address)
-  }
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 

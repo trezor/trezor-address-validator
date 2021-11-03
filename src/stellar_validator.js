@@ -1,3 +1,4 @@
+const { addressType } = require('../src/crypto/utils');
 var baseX = require('base-x');
 var crc = require('crc');
 var cryptoUtils = require('./crypto/utils');
@@ -42,5 +43,12 @@ var ed25519PublicKeyVersionByte = (6 << 3);
         var checksum = cryptoUtils.toHex(bytes.slice(-2));
 
          return computedChecksum === checksum
-    }
+    },
+
+    getAddressType: function (address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
 };

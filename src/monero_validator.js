@@ -1,3 +1,4 @@
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils')
 var cnBase58 = require('./crypto/cnBase58')
 
@@ -58,5 +59,12 @@ module.exports = {
     var hashChecksum = cryptoUtils.keccak256Checksum(hextobin(decodedAddrStr.slice(0, -8)))
 
     return addrChecksum === hashChecksum
-  }
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
