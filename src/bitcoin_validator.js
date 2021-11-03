@@ -209,7 +209,7 @@ function encode(hrp, version, program, m = false) {
     return ret;
 }
 
-function isValidAddress(address, currency, networkType, m = false) {
+function isValidAddress(address, currency, networkType) {
     if (!currency.segwitHrp) {
         return false;
     }
@@ -217,21 +217,15 @@ function isValidAddress(address, currency, networkType, m = false) {
     if (!hrp) {
         return false;
     }
-    var ret = decode(hrp, address, m);
-    if (ret === null) {
-        return false;
+    let ret = decode(hrp, address, false); // try bech32 first
+    if (ret && (ret.version !== 0 || ret.program.length === 20 || ret.program.length === 32)) {
+        return address.toLowerCase() === encode(hrp, ret.version, ret.program, false);
     }
-    if (m) {
-        // I don't get this, how it's not 'version > 1'?
-        if (ret.version <= 1) {
-            return false;
-        }
-    } else {
-        if (ret.version === 0 && ret.program.length !== 20 && ret.program.length !== 32) {
-            return false;
-        }
+    ret = decode(hrp, address, true); // then try bech32m
+    if (ret && ret.version > 1) {
+        return address.toLowerCase() === encode(hrp, ret.version, ret.program, true);
     }
-    return address.toLowerCase() === encode(hrp, ret.version, ret.program, m);
+    return false;
 }
 
 module.exports = {
@@ -259,12 +253,7 @@ module.exports = {
         if (isValidPayToTaprootAddress(address)) {
             return 'P2TR';
         }
-        // bech32
         if (isValidAddress(address, currency, networkType)) {
-            return 'WITNESS_UNKNOWN';
-        }
-        // bech32m
-        if (isValidAddress(address, currency, networkType, true)) {
             return 'WITNESS_UNKNOWN';
         }
         return undefined;
