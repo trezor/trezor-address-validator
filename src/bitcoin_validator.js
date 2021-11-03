@@ -158,15 +158,13 @@ function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType)
     }
 }
 
-function isValidPayToTaprootAddress(address) {
-    let decoded = null;
+function isValidPayToTaprootAddress(address, currency, networkType) {
     try {
-        decoded = bech32m.decode(address);
-    } catch (err) {
-        return null;
-    }
-    const version = decoded.words[0];
-    return version === 1;
+        const hrp = currency.segwitHrp[networkType];
+        decoded = decodeBech32(hrp, address, true);
+        return decoded && decoded.version === 1 && decoded.program.length === 32;
+    } catch (err) {}
+    return null;
 }
 
 function decode(hrp, addr, m = false) {
@@ -250,7 +248,7 @@ module.exports = {
         if (isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType)) {
             return 'P2WPKH';
         }
-        if (isValidPayToTaprootAddress(address)) {
+        if (isValidPayToTaprootAddress(address, currency, networkType)) {
             return 'P2TR';
         }
         if (isValidAddress(address, currency, networkType)) {
