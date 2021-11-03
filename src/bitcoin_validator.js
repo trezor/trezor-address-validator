@@ -237,9 +237,10 @@ function isValidAddress(address, currency, networkType, m = false) {
 module.exports = {
     isValidAddress: function (address, currency, networkType) {        
         networkType = networkType || DEFAULT_NETWORK_TYPE;
+        const addressType = this.getAddressType(address, currency, networkType);
         // Though WITNESS_UNKNOWN is a valid address, it's not spendable - so we mark it as invalid
-        // return [undefined, 'WITNESS_UNKNOWN'].includes(this.getAddressType(address, currency, networkType)) === false;
-        return [undefined].includes(this.getAddressType(address, currency, networkType)) === false;
+        // return addressType !== undefined && addressType !== 'WITNESS_UNKNOWN';
+        return addressType !== undefined;
     },
     getAddressType: function(address, currency, networkType) {
         networkType = networkType || DEFAULT_NETWORK_TYPE;
