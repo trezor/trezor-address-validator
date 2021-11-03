@@ -85,9 +85,12 @@ function isValidPayToScriptHashAddress(address, currency, networkType) {
     return getOutputIndex(address, currency, networkType) > 0;
 }
 
-function isValidPayToWitnessScriptHashAddress(address) {
+function isValidPayToWitnessScriptHashAddress(address, currency, networkType) {
     try {
         const decoded = bech32.decode(address);
+        if (!isValidSegwitHrp(decoded.prefix, currency, networkType)) {
+            return null;
+        }
         const version = decoded.words[0];
         return version === 0 && decoded.words.length - 1 === 52; // 52 characters for 32-byte witness programs like P2WSH or P2TR
     } catch (err) {
@@ -95,9 +98,16 @@ function isValidPayToWitnessScriptHashAddress(address) {
     }
 }
 
-function isValidPayToWitnessPublicKeyHashAddress(address, currency) {
+function isValidSegwitHrp(prefix, currency, networkType) {
+    return currency.segwitHrp?.[networkType] === prefix;
+}
+
+function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType) {
     try {
         const decoded = bech32.decode(address);
+        if (!isValidSegwitHrp(decoded.prefix, currency, networkType)) {
+            return null;
+        }
         const version = decoded.words[0];
         return version === 0 && decoded.words.length - 1 === 32; // 32 characters for 20-byte witness programs like P2WPKH
     } catch (err) {
@@ -139,12 +149,8 @@ function isValidWitnessUnknownAddress(address) {
 module.exports = {
     isValidAddress: function (address, currency, networkType) {        
         networkType = networkType || DEFAULT_NETWORK_TYPE;
-        // return ['WITNESS_UNKNOWN', undefined].includes(this.getAddressType(address, currency, networkType)) === false;
-        return (
-            isValidPayToPublicKeyHashAddress(address, currency, networkType) ||
-            isValidPayToScriptHashAddress(address, currency, networkType) ||
-            segwit.isValidAddress(address, currency, networkType)
-        ); // Is this correct?
+        // Though WITNESS_UNKNOWN is a valid address, it's not spendable - so we mark it as invalid
+        return [undefined, 'WITNESS_UNKNOWN'].includes(this.getAddressType(address, currency, networkType)) === false;
     },
     getAddressType: function(address, currency, networkType) {
         networkType = networkType || DEFAULT_NETWORK_TYPE;
@@ -154,10 +160,10 @@ module.exports = {
         if (isValidPayToScriptHashAddress(address, currency, networkType)) {
             return 'P2SH';
         }
-        if (isValidPayToWitnessScriptHashAddress(address)) {
+        if (isValidPayToWitnessScriptHashAddress(address, currency, networkType)) {
             return 'P2WSH';
         }
-        if (isValidPayToWitnessPublicKeyHashAddress(address)) {
+        if (isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType)) {
             return 'P2WPKH';
         }
         if (isValidPayToTaprootAddress(address)) {
