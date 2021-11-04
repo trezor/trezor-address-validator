@@ -38,12 +38,11 @@ function decode(hrp, addr, m = false) {
     } catch (err) {
         return null;
     }
-    const version = dec?.words[0];
     if (
         dec === null ||
         dec.prefix !== hrp ||
         dec.words.length < 1 ||
-        version > 16
+        dec.words[0] > 16
     ) {
         return null;
     }
@@ -51,7 +50,7 @@ function decode(hrp, addr, m = false) {
     if (res === null || res.length < 2 || res.length > 40) {
         return null;
     }
-    return { version, program: res };
+    return { version: dec.words[0], program: res };
 }
 
 function encode(hrp, version, program, m = false) {

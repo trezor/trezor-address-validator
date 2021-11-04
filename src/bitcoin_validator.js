@@ -89,7 +89,7 @@ function isValidPayToWitnessScriptHashAddress(address, currency, networkType) {
     try {
         const hrp = currency.segwitHrp[networkType];
         const decoded = bech32.decode(hrp, address);
-        return decoded?.version === 0 && decoded?.program.length === 32;
+        return decoded && decoded.version === 0 && decoded.program.length === 32;
     } catch (err) {
         return null;
     }
@@ -99,7 +99,7 @@ function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType)
     try {
         const hrp = currency.segwitHrp[networkType];
         const decoded = bech32.decode(hrp, address);
-        return decoded?.version === 0 && decoded?.program.length === 20;
+        return decoded && decoded.version === 0 && decoded.program.length === 20;
     } catch (err) {
         return null;
     }
@@ -109,7 +109,7 @@ function isValidPayToTaprootAddress(address, currency, networkType) {
     try {
         const hrp = currency.segwitHrp[networkType];
         decoded = bech32.decode(hrp, address, true);
-        return decoded?.version === 1 && decoded?.program.length === 32;
+        return decoded && decoded.version === 1 && decoded.program.length === 32;
     } catch (err) {}
     return null;
 }

@@ -12,7 +12,7 @@ module.exports = {
       return false;
     }
     const decoded = bech32.decode(address);
-    return decoded?.words.length === 32;
+    return decoded && decoded.words.length === 32;
   },
 
   getAddressType: function (address, currency, networkType) {
