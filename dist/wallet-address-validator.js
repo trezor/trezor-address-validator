@@ -274,6 +274,178 @@ function fromByteArray (uint8) {
 }
 
 },{}],3:[function(require,module,exports){
+'use strict';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.bech32m = exports.bech32 = void 0;
+const ALPHABET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+const ALPHABET_MAP = {};
+for (let z = 0; z < ALPHABET.length; z++) {
+    const x = ALPHABET.charAt(z);
+    ALPHABET_MAP[x] = z;
+}
+function polymodStep(pre) {
+    const b = pre >> 25;
+    return (((pre & 0x1ffffff) << 5) ^
+        (-((b >> 0) & 1) & 0x3b6a57b2) ^
+        (-((b >> 1) & 1) & 0x26508e6d) ^
+        (-((b >> 2) & 1) & 0x1ea119fa) ^
+        (-((b >> 3) & 1) & 0x3d4233dd) ^
+        (-((b >> 4) & 1) & 0x2a1462b3));
+}
+function prefixChk(prefix) {
+    let chk = 1;
+    for (let i = 0; i < prefix.length; ++i) {
+        const c = prefix.charCodeAt(i);
+        if (c < 33 || c > 126)
+            return 'Invalid prefix (' + prefix + ')';
+        chk = polymodStep(chk) ^ (c >> 5);
+    }
+    chk = polymodStep(chk);
+    for (let i = 0; i < prefix.length; ++i) {
+        const v = prefix.charCodeAt(i);
+        chk = polymodStep(chk) ^ (v & 0x1f);
+    }
+    return chk;
+}
+function convert(data, inBits, outBits, pad) {
+    let value = 0;
+    let bits = 0;
+    const maxV = (1 << outBits) - 1;
+    const result = [];
+    for (let i = 0; i < data.length; ++i) {
+        value = (value << inBits) | data[i];
+        bits += inBits;
+        while (bits >= outBits) {
+            bits -= outBits;
+            result.push((value >> bits) & maxV);
+        }
+    }
+    if (pad) {
+        if (bits > 0) {
+            result.push((value << (outBits - bits)) & maxV);
+        }
+    }
+    else {
+        if (bits >= inBits)
+            return 'Excess padding';
+        if ((value << (outBits - bits)) & maxV)
+            return 'Non-zero padding';
+    }
+    return result;
+}
+function toWords(bytes) {
+    return convert(bytes, 8, 5, true);
+}
+function fromWordsUnsafe(words) {
+    const res = convert(words, 5, 8, false);
+    if (Array.isArray(res))
+        return res;
+}
+function fromWords(words) {
+    const res = convert(words, 5, 8, false);
+    if (Array.isArray(res))
+        return res;
+    throw new Error(res);
+}
+function getLibraryFromEncoding(encoding) {
+    let ENCODING_CONST;
+    if (encoding === 'bech32') {
+        ENCODING_CONST = 1;
+    }
+    else {
+        ENCODING_CONST = 0x2bc830a3;
+    }
+    function encode(prefix, words, LIMIT) {
+        LIMIT = LIMIT || 90;
+        if (prefix.length + 7 + words.length > LIMIT)
+            throw new TypeError('Exceeds length limit');
+        prefix = prefix.toLowerCase();
+        // determine chk mod
+        let chk = prefixChk(prefix);
+        if (typeof chk === 'string')
+            throw new Error(chk);
+        let result = prefix + '1';
+        for (let i = 0; i < words.length; ++i) {
+            const x = words[i];
+            if (x >> 5 !== 0)
+                throw new Error('Non 5-bit word');
+            chk = polymodStep(chk) ^ x;
+            result += ALPHABET.charAt(x);
+        }
+        for (let i = 0; i < 6; ++i) {
+            chk = polymodStep(chk);
+        }
+        chk ^= ENCODING_CONST;
+        for (let i = 0; i < 6; ++i) {
+            const v = (chk >> ((5 - i) * 5)) & 0x1f;
+            result += ALPHABET.charAt(v);
+        }
+        return result;
+    }
+    function __decode(str, LIMIT) {
+        LIMIT = LIMIT || 90;
+        if (str.length < 8)
+            return str + ' too short';
+        if (str.length > LIMIT)
+            return 'Exceeds length limit';
+        // don't allow mixed case
+        const lowered = str.toLowerCase();
+        const uppered = str.toUpperCase();
+        if (str !== lowered && str !== uppered)
+            return 'Mixed-case string ' + str;
+        str = lowered;
+        const split = str.lastIndexOf('1');
+        if (split === -1)
+            return 'No separator character for ' + str;
+        if (split === 0)
+            return 'Missing prefix for ' + str;
+        const prefix = str.slice(0, split);
+        const wordChars = str.slice(split + 1);
+        if (wordChars.length < 6)
+            return 'Data too short';
+        let chk = prefixChk(prefix);
+        if (typeof chk === 'string')
+            return chk;
+        const words = [];
+        for (let i = 0; i < wordChars.length; ++i) {
+            const c = wordChars.charAt(i);
+            const v = ALPHABET_MAP[c];
+            if (v === undefined)
+                return 'Unknown character ' + c;
+            chk = polymodStep(chk) ^ v;
+            // not in the checksum?
+            if (i + 6 >= wordChars.length)
+                continue;
+            words.push(v);
+        }
+        if (chk !== ENCODING_CONST)
+            return 'Invalid checksum for ' + str;
+        return { prefix, words };
+    }
+    function decodeUnsafe(str, LIMIT) {
+        const res = __decode(str, LIMIT);
+        if (typeof res === 'object')
+            return res;
+    }
+    function decode(str, LIMIT) {
+        const res = __decode(str, LIMIT);
+        if (typeof res === 'object')
+            return res;
+        throw new Error(res);
+    }
+    return {
+        decodeUnsafe,
+        decode,
+        encode,
+        toWords,
+        fromWordsUnsafe,
+        fromWords,
+    };
+}
+exports.bech32 = getLibraryFromEncoding('bech32');
+exports.bech32m = getLibraryFromEncoding('bech32m');
+
+},{}],4:[function(require,module,exports){
 (function (Buffer){
 /* bignumber.js v1.3.0 https://github.com/MikeMcl/bignumber.js/LICENCE */
 
@@ -2391,7 +2563,7 @@ P['valueOf'] = function () {
 module.exports = BigNumber;
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":4}],4:[function(require,module,exports){
+},{"buffer":5}],5:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -4170,7 +4342,7 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":2,"ieee754":35}],5:[function(require,module,exports){
+},{"base64-js":2,"ieee754":36}],6:[function(require,module,exports){
 /*
  * The MIT License (MIT)
  *
@@ -4578,62 +4750,62 @@ else if (!global.CBOR)
 
 })(this);
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./es6/crc1').default;
 
-},{"./es6/crc1":17}],7:[function(require,module,exports){
+},{"./es6/crc1":18}],8:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./es6/crc16').default;
 
-},{"./es6/crc16":18}],8:[function(require,module,exports){
+},{"./es6/crc16":19}],9:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./es6/crc16ccitt').default;
 
-},{"./es6/crc16ccitt":19}],9:[function(require,module,exports){
+},{"./es6/crc16ccitt":20}],10:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./es6/crc16kermit').default;
 
-},{"./es6/crc16kermit":20}],10:[function(require,module,exports){
+},{"./es6/crc16kermit":21}],11:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./es6/crc16modbus').default;
 
-},{"./es6/crc16modbus":21}],11:[function(require,module,exports){
+},{"./es6/crc16modbus":22}],12:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./es6/crc16xmodem').default;
 
-},{"./es6/crc16xmodem":22}],12:[function(require,module,exports){
+},{"./es6/crc16xmodem":23}],13:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./es6/crc24').default;
 
-},{"./es6/crc24":23}],13:[function(require,module,exports){
+},{"./es6/crc24":24}],14:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./es6/crc32').default;
 
-},{"./es6/crc32":24}],14:[function(require,module,exports){
+},{"./es6/crc32":25}],15:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./es6/crc8').default;
 
-},{"./es6/crc8":25}],15:[function(require,module,exports){
+},{"./es6/crc8":26}],16:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./es6/crc81wire').default;
 
-},{"./es6/crc81wire":26}],16:[function(require,module,exports){
+},{"./es6/crc81wire":27}],17:[function(require,module,exports){
 'use strict';
 
 module.exports = require('./es6/crcjam').default;
 
-},{"./es6/crcjam":27}],17:[function(require,module,exports){
+},{"./es6/crcjam":28}],18:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4669,7 +4841,7 @@ var crc1 = (0, _define_crc2.default)('crc1', function (buf, previous) {
 
 exports.default = crc1;
 
-},{"./create_buffer":28,"./define_crc":29,"buffer":4}],18:[function(require,module,exports){
+},{"./create_buffer":29,"./define_crc":30,"buffer":5}],19:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4709,7 +4881,7 @@ var crc16 = (0, _define_crc2.default)('crc-16', function (buf, previous) {
 
 exports.default = crc16;
 
-},{"./create_buffer":28,"./define_crc":29,"buffer":4}],19:[function(require,module,exports){
+},{"./create_buffer":29,"./define_crc":30,"buffer":5}],20:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4749,7 +4921,7 @@ var crc16ccitt = (0, _define_crc2.default)('ccitt', function (buf, previous) {
 
 exports.default = crc16ccitt;
 
-},{"./create_buffer":28,"./define_crc":29,"buffer":4}],20:[function(require,module,exports){
+},{"./create_buffer":29,"./define_crc":30,"buffer":5}],21:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4789,7 +4961,7 @@ var crc16kermit = (0, _define_crc2.default)('kermit', function (buf, previous) {
 
 exports.default = crc16kermit;
 
-},{"./create_buffer":28,"./define_crc":29,"buffer":4}],21:[function(require,module,exports){
+},{"./create_buffer":29,"./define_crc":30,"buffer":5}],22:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4829,7 +5001,7 @@ var crc16modbus = (0, _define_crc2.default)('crc-16-modbus', function (buf, prev
 
 exports.default = crc16modbus;
 
-},{"./create_buffer":28,"./define_crc":29,"buffer":4}],22:[function(require,module,exports){
+},{"./create_buffer":29,"./define_crc":30,"buffer":5}],23:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4872,7 +5044,7 @@ var crc16xmodem = (0, _define_crc2.default)('xmodem', function (buf, previous) {
 
 exports.default = crc16xmodem;
 
-},{"./create_buffer":28,"./define_crc":29,"buffer":4}],23:[function(require,module,exports){
+},{"./create_buffer":29,"./define_crc":30,"buffer":5}],24:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4912,7 +5084,7 @@ var crc24 = (0, _define_crc2.default)('crc-24', function (buf, previous) {
 
 exports.default = crc24;
 
-},{"./create_buffer":28,"./define_crc":29,"buffer":4}],24:[function(require,module,exports){
+},{"./create_buffer":29,"./define_crc":30,"buffer":5}],25:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4952,7 +5124,7 @@ var crc32 = (0, _define_crc2.default)('crc-32', function (buf, previous) {
 
 exports.default = crc32;
 
-},{"./create_buffer":28,"./define_crc":29,"buffer":4}],25:[function(require,module,exports){
+},{"./create_buffer":29,"./define_crc":30,"buffer":5}],26:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4992,7 +5164,7 @@ var crc8 = (0, _define_crc2.default)('crc-8', function (buf, previous) {
 
 exports.default = crc8;
 
-},{"./create_buffer":28,"./define_crc":29,"buffer":4}],26:[function(require,module,exports){
+},{"./create_buffer":29,"./define_crc":30,"buffer":5}],27:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -5032,7 +5204,7 @@ var crc81wire = (0, _define_crc2.default)('dallas-1-wire', function (buf, previo
 
 exports.default = crc81wire;
 
-},{"./create_buffer":28,"./define_crc":29,"buffer":4}],27:[function(require,module,exports){
+},{"./create_buffer":29,"./define_crc":30,"buffer":5}],28:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -5074,7 +5246,7 @@ var crcjam = (0, _define_crc2.default)('jam', function (buf) {
 
 exports.default = crcjam;
 
-},{"./create_buffer":28,"./define_crc":29,"buffer":4}],28:[function(require,module,exports){
+},{"./create_buffer":29,"./define_crc":30,"buffer":5}],29:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -5090,7 +5262,7 @@ function (val) {
 
 exports.default = createBuffer;
 
-},{"buffer":4}],29:[function(require,module,exports){
+},{"buffer":5}],30:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -5108,7 +5280,7 @@ exports.default = function (model, calc) {
   return fn;
 };
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -5125,7 +5297,7 @@ module.exports = {
   crcjam: require('./crcjam')
 };
 
-},{"./crc1":6,"./crc16":7,"./crc16_ccitt":8,"./crc16_kermit":9,"./crc16_modbus":10,"./crc16_xmodem":11,"./crc24":12,"./crc32":13,"./crc8":14,"./crc8_1wire":15,"./crcjam":16}],31:[function(require,module,exports){
+},{"./crc1":7,"./crc16":8,"./crc16_ccitt":9,"./crc16_kermit":10,"./crc16_modbus":11,"./crc16_xmodem":12,"./crc24":13,"./crc32":14,"./crc8":15,"./crc8_1wire":16,"./crcjam":17}],32:[function(require,module,exports){
 'use strict';
 
 var groestl = require('./lib/groestl');
@@ -5165,7 +5337,7 @@ module.exports.groestl_2 = function(str,format, output) {
     return h.int32ArrayToHexString(a);
   }
 }
-},{"./lib/groestl":32,"./lib/helper":33}],32:[function(require,module,exports){
+},{"./lib/groestl":33,"./lib/helper":34}],33:[function(require,module,exports){
 /////////////////////////////////////
 ////////////  groestl ///////////////
 
@@ -6414,7 +6586,7 @@ module.exports = function(input, format, output) {
   }
   return out;
 }
-},{"./helper":33,"./op":34}],33:[function(require,module,exports){
+},{"./helper":34,"./op":35}],34:[function(require,module,exports){
 'use strict';
 // String functions
 
@@ -6668,7 +6840,7 @@ module.exports.b64Decode = function(input) {
 	}
 	return output;
 };
-},{"./op.js":34}],34:[function(require,module,exports){
+},{"./op.js":35}],35:[function(require,module,exports){
 'use strict';
 //the right shift is important, it has to do with 32 bit operations in javascript, it will make things faster
 function u64(h, l) {
@@ -7132,7 +7304,7 @@ module.exports.xORTable = function(d, s1, s2, len) {
   }
 }
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -7218,7 +7390,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 /*
  A JavaScript implementation of the SHA family of hashes, as
  defined in FIPS PUB 180-4 and FIPS PUB 202, as well as the corresponding
@@ -7249,7 +7421,7 @@ new m,new m,new m,new m,new m,new m];break;case "SHA-512":a=[new m,new m,new m,n
 2614888103,3248222580,3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986,2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895,666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037,2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344,430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779,1955562222,2024104815,2227730452,2361852424,2428436474,
 2756734187,3204031479,3329325298];"function"===typeof define&&define.amd?define(function(){return w}):"undefined"!==typeof exports?("undefined"!==typeof module&&module.exports&&(module.exports=w),exports=w):I.jsSHA=w})(this);
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 var getNative = require('./_getNative'),
     root = require('./_root');
 
@@ -7258,7 +7430,7 @@ var DataView = getNative(root, 'DataView');
 
 module.exports = DataView;
 
-},{"./_getNative":72,"./_root":102}],38:[function(require,module,exports){
+},{"./_getNative":73,"./_root":103}],39:[function(require,module,exports){
 var hashClear = require('./_hashClear'),
     hashDelete = require('./_hashDelete'),
     hashGet = require('./_hashGet'),
@@ -7292,7 +7464,7 @@ Hash.prototype.set = hashSet;
 
 module.exports = Hash;
 
-},{"./_hashClear":77,"./_hashDelete":78,"./_hashGet":79,"./_hashHas":80,"./_hashSet":81}],39:[function(require,module,exports){
+},{"./_hashClear":78,"./_hashDelete":79,"./_hashGet":80,"./_hashHas":81,"./_hashSet":82}],40:[function(require,module,exports){
 var listCacheClear = require('./_listCacheClear'),
     listCacheDelete = require('./_listCacheDelete'),
     listCacheGet = require('./_listCacheGet'),
@@ -7326,7 +7498,7 @@ ListCache.prototype.set = listCacheSet;
 
 module.exports = ListCache;
 
-},{"./_listCacheClear":86,"./_listCacheDelete":87,"./_listCacheGet":88,"./_listCacheHas":89,"./_listCacheSet":90}],40:[function(require,module,exports){
+},{"./_listCacheClear":87,"./_listCacheDelete":88,"./_listCacheGet":89,"./_listCacheHas":90,"./_listCacheSet":91}],41:[function(require,module,exports){
 var getNative = require('./_getNative'),
     root = require('./_root');
 
@@ -7335,7 +7507,7 @@ var Map = getNative(root, 'Map');
 
 module.exports = Map;
 
-},{"./_getNative":72,"./_root":102}],41:[function(require,module,exports){
+},{"./_getNative":73,"./_root":103}],42:[function(require,module,exports){
 var mapCacheClear = require('./_mapCacheClear'),
     mapCacheDelete = require('./_mapCacheDelete'),
     mapCacheGet = require('./_mapCacheGet'),
@@ -7369,7 +7541,7 @@ MapCache.prototype.set = mapCacheSet;
 
 module.exports = MapCache;
 
-},{"./_mapCacheClear":91,"./_mapCacheDelete":92,"./_mapCacheGet":93,"./_mapCacheHas":94,"./_mapCacheSet":95}],42:[function(require,module,exports){
+},{"./_mapCacheClear":92,"./_mapCacheDelete":93,"./_mapCacheGet":94,"./_mapCacheHas":95,"./_mapCacheSet":96}],43:[function(require,module,exports){
 var getNative = require('./_getNative'),
     root = require('./_root');
 
@@ -7378,7 +7550,7 @@ var Promise = getNative(root, 'Promise');
 
 module.exports = Promise;
 
-},{"./_getNative":72,"./_root":102}],43:[function(require,module,exports){
+},{"./_getNative":73,"./_root":103}],44:[function(require,module,exports){
 var getNative = require('./_getNative'),
     root = require('./_root');
 
@@ -7387,7 +7559,7 @@ var Set = getNative(root, 'Set');
 
 module.exports = Set;
 
-},{"./_getNative":72,"./_root":102}],44:[function(require,module,exports){
+},{"./_getNative":73,"./_root":103}],45:[function(require,module,exports){
 var MapCache = require('./_MapCache'),
     setCacheAdd = require('./_setCacheAdd'),
     setCacheHas = require('./_setCacheHas');
@@ -7416,7 +7588,7 @@ SetCache.prototype.has = setCacheHas;
 
 module.exports = SetCache;
 
-},{"./_MapCache":41,"./_setCacheAdd":103,"./_setCacheHas":104}],45:[function(require,module,exports){
+},{"./_MapCache":42,"./_setCacheAdd":104,"./_setCacheHas":105}],46:[function(require,module,exports){
 var ListCache = require('./_ListCache'),
     stackClear = require('./_stackClear'),
     stackDelete = require('./_stackDelete'),
@@ -7445,7 +7617,7 @@ Stack.prototype.set = stackSet;
 
 module.exports = Stack;
 
-},{"./_ListCache":39,"./_stackClear":106,"./_stackDelete":107,"./_stackGet":108,"./_stackHas":109,"./_stackSet":110}],46:[function(require,module,exports){
+},{"./_ListCache":40,"./_stackClear":107,"./_stackDelete":108,"./_stackGet":109,"./_stackHas":110,"./_stackSet":111}],47:[function(require,module,exports){
 var root = require('./_root');
 
 /** Built-in value references. */
@@ -7453,7 +7625,7 @@ var Symbol = root.Symbol;
 
 module.exports = Symbol;
 
-},{"./_root":102}],47:[function(require,module,exports){
+},{"./_root":103}],48:[function(require,module,exports){
 var root = require('./_root');
 
 /** Built-in value references. */
@@ -7461,7 +7633,7 @@ var Uint8Array = root.Uint8Array;
 
 module.exports = Uint8Array;
 
-},{"./_root":102}],48:[function(require,module,exports){
+},{"./_root":103}],49:[function(require,module,exports){
 var getNative = require('./_getNative'),
     root = require('./_root');
 
@@ -7470,7 +7642,7 @@ var WeakMap = getNative(root, 'WeakMap');
 
 module.exports = WeakMap;
 
-},{"./_getNative":72,"./_root":102}],49:[function(require,module,exports){
+},{"./_getNative":73,"./_root":103}],50:[function(require,module,exports){
 /**
  * A specialized version of `_.filter` for arrays without support for
  * iteratee shorthands.
@@ -7497,7 +7669,7 @@ function arrayFilter(array, predicate) {
 
 module.exports = arrayFilter;
 
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 var baseTimes = require('./_baseTimes'),
     isArguments = require('./isArguments'),
     isArray = require('./isArray'),
@@ -7548,7 +7720,7 @@ function arrayLikeKeys(value, inherited) {
 
 module.exports = arrayLikeKeys;
 
-},{"./_baseTimes":62,"./_isIndex":82,"./isArguments":113,"./isArray":114,"./isBuffer":116,"./isTypedArray":122}],51:[function(require,module,exports){
+},{"./_baseTimes":63,"./_isIndex":83,"./isArguments":114,"./isArray":115,"./isBuffer":117,"./isTypedArray":123}],52:[function(require,module,exports){
 /**
  * Appends the elements of `values` to `array`.
  *
@@ -7570,7 +7742,7 @@ function arrayPush(array, values) {
 
 module.exports = arrayPush;
 
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 /**
  * A specialized version of `_.some` for arrays without support for iteratee
  * shorthands.
@@ -7595,7 +7767,7 @@ function arraySome(array, predicate) {
 
 module.exports = arraySome;
 
-},{}],53:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 var eq = require('./eq');
 
 /**
@@ -7618,7 +7790,7 @@ function assocIndexOf(array, key) {
 
 module.exports = assocIndexOf;
 
-},{"./eq":112}],54:[function(require,module,exports){
+},{"./eq":113}],55:[function(require,module,exports){
 var arrayPush = require('./_arrayPush'),
     isArray = require('./isArray');
 
@@ -7640,7 +7812,7 @@ function baseGetAllKeys(object, keysFunc, symbolsFunc) {
 
 module.exports = baseGetAllKeys;
 
-},{"./_arrayPush":51,"./isArray":114}],55:[function(require,module,exports){
+},{"./_arrayPush":52,"./isArray":115}],56:[function(require,module,exports){
 var Symbol = require('./_Symbol'),
     getRawTag = require('./_getRawTag'),
     objectToString = require('./_objectToString');
@@ -7670,7 +7842,7 @@ function baseGetTag(value) {
 
 module.exports = baseGetTag;
 
-},{"./_Symbol":46,"./_getRawTag":73,"./_objectToString":100}],56:[function(require,module,exports){
+},{"./_Symbol":47,"./_getRawTag":74,"./_objectToString":101}],57:[function(require,module,exports){
 var baseGetTag = require('./_baseGetTag'),
     isObjectLike = require('./isObjectLike');
 
@@ -7690,7 +7862,7 @@ function baseIsArguments(value) {
 
 module.exports = baseIsArguments;
 
-},{"./_baseGetTag":55,"./isObjectLike":121}],57:[function(require,module,exports){
+},{"./_baseGetTag":56,"./isObjectLike":122}],58:[function(require,module,exports){
 var baseIsEqualDeep = require('./_baseIsEqualDeep'),
     isObjectLike = require('./isObjectLike');
 
@@ -7720,7 +7892,7 @@ function baseIsEqual(value, other, bitmask, customizer, stack) {
 
 module.exports = baseIsEqual;
 
-},{"./_baseIsEqualDeep":58,"./isObjectLike":121}],58:[function(require,module,exports){
+},{"./_baseIsEqualDeep":59,"./isObjectLike":122}],59:[function(require,module,exports){
 var Stack = require('./_Stack'),
     equalArrays = require('./_equalArrays'),
     equalByTag = require('./_equalByTag'),
@@ -7805,7 +7977,7 @@ function baseIsEqualDeep(object, other, bitmask, customizer, equalFunc, stack) {
 
 module.exports = baseIsEqualDeep;
 
-},{"./_Stack":45,"./_equalArrays":66,"./_equalByTag":67,"./_equalObjects":68,"./_getTag":75,"./isArray":114,"./isBuffer":116,"./isTypedArray":122}],59:[function(require,module,exports){
+},{"./_Stack":46,"./_equalArrays":67,"./_equalByTag":68,"./_equalObjects":69,"./_getTag":76,"./isArray":115,"./isBuffer":117,"./isTypedArray":123}],60:[function(require,module,exports){
 var isFunction = require('./isFunction'),
     isMasked = require('./_isMasked'),
     isObject = require('./isObject'),
@@ -7854,7 +8026,7 @@ function baseIsNative(value) {
 
 module.exports = baseIsNative;
 
-},{"./_isMasked":84,"./_toSource":111,"./isFunction":118,"./isObject":120}],60:[function(require,module,exports){
+},{"./_isMasked":85,"./_toSource":112,"./isFunction":119,"./isObject":121}],61:[function(require,module,exports){
 var baseGetTag = require('./_baseGetTag'),
     isLength = require('./isLength'),
     isObjectLike = require('./isObjectLike');
@@ -7916,7 +8088,7 @@ function baseIsTypedArray(value) {
 
 module.exports = baseIsTypedArray;
 
-},{"./_baseGetTag":55,"./isLength":119,"./isObjectLike":121}],61:[function(require,module,exports){
+},{"./_baseGetTag":56,"./isLength":120,"./isObjectLike":122}],62:[function(require,module,exports){
 var isPrototype = require('./_isPrototype'),
     nativeKeys = require('./_nativeKeys');
 
@@ -7948,7 +8120,7 @@ function baseKeys(object) {
 
 module.exports = baseKeys;
 
-},{"./_isPrototype":85,"./_nativeKeys":98}],62:[function(require,module,exports){
+},{"./_isPrototype":86,"./_nativeKeys":99}],63:[function(require,module,exports){
 /**
  * The base implementation of `_.times` without support for iteratee shorthands
  * or max array length checks.
@@ -7970,7 +8142,7 @@ function baseTimes(n, iteratee) {
 
 module.exports = baseTimes;
 
-},{}],63:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 /**
  * The base implementation of `_.unary` without support for storing metadata.
  *
@@ -7986,7 +8158,7 @@ function baseUnary(func) {
 
 module.exports = baseUnary;
 
-},{}],64:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 /**
  * Checks if a `cache` value for `key` exists.
  *
@@ -8001,7 +8173,7 @@ function cacheHas(cache, key) {
 
 module.exports = cacheHas;
 
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 var root = require('./_root');
 
 /** Used to detect overreaching core-js shims. */
@@ -8009,7 +8181,7 @@ var coreJsData = root['__core-js_shared__'];
 
 module.exports = coreJsData;
 
-},{"./_root":102}],66:[function(require,module,exports){
+},{"./_root":103}],67:[function(require,module,exports){
 var SetCache = require('./_SetCache'),
     arraySome = require('./_arraySome'),
     cacheHas = require('./_cacheHas');
@@ -8094,7 +8266,7 @@ function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
 
 module.exports = equalArrays;
 
-},{"./_SetCache":44,"./_arraySome":52,"./_cacheHas":64}],67:[function(require,module,exports){
+},{"./_SetCache":45,"./_arraySome":53,"./_cacheHas":65}],68:[function(require,module,exports){
 var Symbol = require('./_Symbol'),
     Uint8Array = require('./_Uint8Array'),
     eq = require('./eq'),
@@ -8208,7 +8380,7 @@ function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
 
 module.exports = equalByTag;
 
-},{"./_Symbol":46,"./_Uint8Array":47,"./_equalArrays":66,"./_mapToArray":96,"./_setToArray":105,"./eq":112}],68:[function(require,module,exports){
+},{"./_Symbol":47,"./_Uint8Array":48,"./_equalArrays":67,"./_mapToArray":97,"./_setToArray":106,"./eq":113}],69:[function(require,module,exports){
 var getAllKeys = require('./_getAllKeys');
 
 /** Used to compose bitmasks for value comparisons. */
@@ -8299,7 +8471,7 @@ function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
 
 module.exports = equalObjects;
 
-},{"./_getAllKeys":70}],69:[function(require,module,exports){
+},{"./_getAllKeys":71}],70:[function(require,module,exports){
 (function (global){
 /** Detect free variable `global` from Node.js. */
 var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
@@ -8307,7 +8479,7 @@ var freeGlobal = typeof global == 'object' && global && global.Object === Object
 module.exports = freeGlobal;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],70:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 var baseGetAllKeys = require('./_baseGetAllKeys'),
     getSymbols = require('./_getSymbols'),
     keys = require('./keys');
@@ -8325,7 +8497,7 @@ function getAllKeys(object) {
 
 module.exports = getAllKeys;
 
-},{"./_baseGetAllKeys":54,"./_getSymbols":74,"./keys":123}],71:[function(require,module,exports){
+},{"./_baseGetAllKeys":55,"./_getSymbols":75,"./keys":124}],72:[function(require,module,exports){
 var isKeyable = require('./_isKeyable');
 
 /**
@@ -8345,7 +8517,7 @@ function getMapData(map, key) {
 
 module.exports = getMapData;
 
-},{"./_isKeyable":83}],72:[function(require,module,exports){
+},{"./_isKeyable":84}],73:[function(require,module,exports){
 var baseIsNative = require('./_baseIsNative'),
     getValue = require('./_getValue');
 
@@ -8364,7 +8536,7 @@ function getNative(object, key) {
 
 module.exports = getNative;
 
-},{"./_baseIsNative":59,"./_getValue":76}],73:[function(require,module,exports){
+},{"./_baseIsNative":60,"./_getValue":77}],74:[function(require,module,exports){
 var Symbol = require('./_Symbol');
 
 /** Used for built-in method references. */
@@ -8412,7 +8584,7 @@ function getRawTag(value) {
 
 module.exports = getRawTag;
 
-},{"./_Symbol":46}],74:[function(require,module,exports){
+},{"./_Symbol":47}],75:[function(require,module,exports){
 var arrayFilter = require('./_arrayFilter'),
     stubArray = require('./stubArray');
 
@@ -8444,7 +8616,7 @@ var getSymbols = !nativeGetSymbols ? stubArray : function(object) {
 
 module.exports = getSymbols;
 
-},{"./_arrayFilter":49,"./stubArray":124}],75:[function(require,module,exports){
+},{"./_arrayFilter":50,"./stubArray":125}],76:[function(require,module,exports){
 var DataView = require('./_DataView'),
     Map = require('./_Map'),
     Promise = require('./_Promise'),
@@ -8504,7 +8676,7 @@ if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
 
 module.exports = getTag;
 
-},{"./_DataView":37,"./_Map":40,"./_Promise":42,"./_Set":43,"./_WeakMap":48,"./_baseGetTag":55,"./_toSource":111}],76:[function(require,module,exports){
+},{"./_DataView":38,"./_Map":41,"./_Promise":43,"./_Set":44,"./_WeakMap":49,"./_baseGetTag":56,"./_toSource":112}],77:[function(require,module,exports){
 /**
  * Gets the value at `key` of `object`.
  *
@@ -8519,7 +8691,7 @@ function getValue(object, key) {
 
 module.exports = getValue;
 
-},{}],77:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 var nativeCreate = require('./_nativeCreate');
 
 /**
@@ -8536,7 +8708,7 @@ function hashClear() {
 
 module.exports = hashClear;
 
-},{"./_nativeCreate":97}],78:[function(require,module,exports){
+},{"./_nativeCreate":98}],79:[function(require,module,exports){
 /**
  * Removes `key` and its value from the hash.
  *
@@ -8555,7 +8727,7 @@ function hashDelete(key) {
 
 module.exports = hashDelete;
 
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 var nativeCreate = require('./_nativeCreate');
 
 /** Used to stand-in for `undefined` hash values. */
@@ -8587,7 +8759,7 @@ function hashGet(key) {
 
 module.exports = hashGet;
 
-},{"./_nativeCreate":97}],80:[function(require,module,exports){
+},{"./_nativeCreate":98}],81:[function(require,module,exports){
 var nativeCreate = require('./_nativeCreate');
 
 /** Used for built-in method references. */
@@ -8612,7 +8784,7 @@ function hashHas(key) {
 
 module.exports = hashHas;
 
-},{"./_nativeCreate":97}],81:[function(require,module,exports){
+},{"./_nativeCreate":98}],82:[function(require,module,exports){
 var nativeCreate = require('./_nativeCreate');
 
 /** Used to stand-in for `undefined` hash values. */
@@ -8637,7 +8809,7 @@ function hashSet(key, value) {
 
 module.exports = hashSet;
 
-},{"./_nativeCreate":97}],82:[function(require,module,exports){
+},{"./_nativeCreate":98}],83:[function(require,module,exports){
 /** Used as references for various `Number` constants. */
 var MAX_SAFE_INTEGER = 9007199254740991;
 
@@ -8664,7 +8836,7 @@ function isIndex(value, length) {
 
 module.exports = isIndex;
 
-},{}],83:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 /**
  * Checks if `value` is suitable for use as unique object key.
  *
@@ -8681,7 +8853,7 @@ function isKeyable(value) {
 
 module.exports = isKeyable;
 
-},{}],84:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 var coreJsData = require('./_coreJsData');
 
 /** Used to detect methods masquerading as native. */
@@ -8703,7 +8875,7 @@ function isMasked(func) {
 
 module.exports = isMasked;
 
-},{"./_coreJsData":65}],85:[function(require,module,exports){
+},{"./_coreJsData":66}],86:[function(require,module,exports){
 /** Used for built-in method references. */
 var objectProto = Object.prototype;
 
@@ -8723,7 +8895,7 @@ function isPrototype(value) {
 
 module.exports = isPrototype;
 
-},{}],86:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 /**
  * Removes all key-value entries from the list cache.
  *
@@ -8738,7 +8910,7 @@ function listCacheClear() {
 
 module.exports = listCacheClear;
 
-},{}],87:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 var assocIndexOf = require('./_assocIndexOf');
 
 /** Used for built-in method references. */
@@ -8775,7 +8947,7 @@ function listCacheDelete(key) {
 
 module.exports = listCacheDelete;
 
-},{"./_assocIndexOf":53}],88:[function(require,module,exports){
+},{"./_assocIndexOf":54}],89:[function(require,module,exports){
 var assocIndexOf = require('./_assocIndexOf');
 
 /**
@@ -8796,7 +8968,7 @@ function listCacheGet(key) {
 
 module.exports = listCacheGet;
 
-},{"./_assocIndexOf":53}],89:[function(require,module,exports){
+},{"./_assocIndexOf":54}],90:[function(require,module,exports){
 var assocIndexOf = require('./_assocIndexOf');
 
 /**
@@ -8814,7 +8986,7 @@ function listCacheHas(key) {
 
 module.exports = listCacheHas;
 
-},{"./_assocIndexOf":53}],90:[function(require,module,exports){
+},{"./_assocIndexOf":54}],91:[function(require,module,exports){
 var assocIndexOf = require('./_assocIndexOf');
 
 /**
@@ -8842,7 +9014,7 @@ function listCacheSet(key, value) {
 
 module.exports = listCacheSet;
 
-},{"./_assocIndexOf":53}],91:[function(require,module,exports){
+},{"./_assocIndexOf":54}],92:[function(require,module,exports){
 var Hash = require('./_Hash'),
     ListCache = require('./_ListCache'),
     Map = require('./_Map');
@@ -8865,7 +9037,7 @@ function mapCacheClear() {
 
 module.exports = mapCacheClear;
 
-},{"./_Hash":38,"./_ListCache":39,"./_Map":40}],92:[function(require,module,exports){
+},{"./_Hash":39,"./_ListCache":40,"./_Map":41}],93:[function(require,module,exports){
 var getMapData = require('./_getMapData');
 
 /**
@@ -8885,7 +9057,7 @@ function mapCacheDelete(key) {
 
 module.exports = mapCacheDelete;
 
-},{"./_getMapData":71}],93:[function(require,module,exports){
+},{"./_getMapData":72}],94:[function(require,module,exports){
 var getMapData = require('./_getMapData');
 
 /**
@@ -8903,7 +9075,7 @@ function mapCacheGet(key) {
 
 module.exports = mapCacheGet;
 
-},{"./_getMapData":71}],94:[function(require,module,exports){
+},{"./_getMapData":72}],95:[function(require,module,exports){
 var getMapData = require('./_getMapData');
 
 /**
@@ -8921,7 +9093,7 @@ function mapCacheHas(key) {
 
 module.exports = mapCacheHas;
 
-},{"./_getMapData":71}],95:[function(require,module,exports){
+},{"./_getMapData":72}],96:[function(require,module,exports){
 var getMapData = require('./_getMapData');
 
 /**
@@ -8945,7 +9117,7 @@ function mapCacheSet(key, value) {
 
 module.exports = mapCacheSet;
 
-},{"./_getMapData":71}],96:[function(require,module,exports){
+},{"./_getMapData":72}],97:[function(require,module,exports){
 /**
  * Converts `map` to its key-value pairs.
  *
@@ -8965,7 +9137,7 @@ function mapToArray(map) {
 
 module.exports = mapToArray;
 
-},{}],97:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 var getNative = require('./_getNative');
 
 /* Built-in method references that are verified to be native. */
@@ -8973,7 +9145,7 @@ var nativeCreate = getNative(Object, 'create');
 
 module.exports = nativeCreate;
 
-},{"./_getNative":72}],98:[function(require,module,exports){
+},{"./_getNative":73}],99:[function(require,module,exports){
 var overArg = require('./_overArg');
 
 /* Built-in method references for those with the same name as other `lodash` methods. */
@@ -8981,7 +9153,7 @@ var nativeKeys = overArg(Object.keys, Object);
 
 module.exports = nativeKeys;
 
-},{"./_overArg":101}],99:[function(require,module,exports){
+},{"./_overArg":102}],100:[function(require,module,exports){
 var freeGlobal = require('./_freeGlobal');
 
 /** Detect free variable `exports`. */
@@ -9013,7 +9185,7 @@ var nodeUtil = (function() {
 
 module.exports = nodeUtil;
 
-},{"./_freeGlobal":69}],100:[function(require,module,exports){
+},{"./_freeGlobal":70}],101:[function(require,module,exports){
 /** Used for built-in method references. */
 var objectProto = Object.prototype;
 
@@ -9037,7 +9209,7 @@ function objectToString(value) {
 
 module.exports = objectToString;
 
-},{}],101:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 /**
  * Creates a unary function that invokes `func` with its argument transformed.
  *
@@ -9054,7 +9226,7 @@ function overArg(func, transform) {
 
 module.exports = overArg;
 
-},{}],102:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 var freeGlobal = require('./_freeGlobal');
 
 /** Detect free variable `self`. */
@@ -9065,7 +9237,7 @@ var root = freeGlobal || freeSelf || Function('return this')();
 
 module.exports = root;
 
-},{"./_freeGlobal":69}],103:[function(require,module,exports){
+},{"./_freeGlobal":70}],104:[function(require,module,exports){
 /** Used to stand-in for `undefined` hash values. */
 var HASH_UNDEFINED = '__lodash_hash_undefined__';
 
@@ -9086,7 +9258,7 @@ function setCacheAdd(value) {
 
 module.exports = setCacheAdd;
 
-},{}],104:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 /**
  * Checks if `value` is in the array cache.
  *
@@ -9102,7 +9274,7 @@ function setCacheHas(value) {
 
 module.exports = setCacheHas;
 
-},{}],105:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 /**
  * Converts `set` to an array of its values.
  *
@@ -9122,7 +9294,7 @@ function setToArray(set) {
 
 module.exports = setToArray;
 
-},{}],106:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 var ListCache = require('./_ListCache');
 
 /**
@@ -9139,7 +9311,7 @@ function stackClear() {
 
 module.exports = stackClear;
 
-},{"./_ListCache":39}],107:[function(require,module,exports){
+},{"./_ListCache":40}],108:[function(require,module,exports){
 /**
  * Removes `key` and its value from the stack.
  *
@@ -9159,7 +9331,7 @@ function stackDelete(key) {
 
 module.exports = stackDelete;
 
-},{}],108:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 /**
  * Gets the stack value for `key`.
  *
@@ -9175,7 +9347,7 @@ function stackGet(key) {
 
 module.exports = stackGet;
 
-},{}],109:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 /**
  * Checks if a stack value for `key` exists.
  *
@@ -9191,7 +9363,7 @@ function stackHas(key) {
 
 module.exports = stackHas;
 
-},{}],110:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 var ListCache = require('./_ListCache'),
     Map = require('./_Map'),
     MapCache = require('./_MapCache');
@@ -9227,7 +9399,7 @@ function stackSet(key, value) {
 
 module.exports = stackSet;
 
-},{"./_ListCache":39,"./_Map":40,"./_MapCache":41}],111:[function(require,module,exports){
+},{"./_ListCache":40,"./_Map":41,"./_MapCache":42}],112:[function(require,module,exports){
 /** Used for built-in method references. */
 var funcProto = Function.prototype;
 
@@ -9255,7 +9427,7 @@ function toSource(func) {
 
 module.exports = toSource;
 
-},{}],112:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 /**
  * Performs a
  * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
@@ -9294,7 +9466,7 @@ function eq(value, other) {
 
 module.exports = eq;
 
-},{}],113:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 var baseIsArguments = require('./_baseIsArguments'),
     isObjectLike = require('./isObjectLike');
 
@@ -9332,7 +9504,7 @@ var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsAr
 
 module.exports = isArguments;
 
-},{"./_baseIsArguments":56,"./isObjectLike":121}],114:[function(require,module,exports){
+},{"./_baseIsArguments":57,"./isObjectLike":122}],115:[function(require,module,exports){
 /**
  * Checks if `value` is classified as an `Array` object.
  *
@@ -9360,7 +9532,7 @@ var isArray = Array.isArray;
 
 module.exports = isArray;
 
-},{}],115:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 var isFunction = require('./isFunction'),
     isLength = require('./isLength');
 
@@ -9395,7 +9567,7 @@ function isArrayLike(value) {
 
 module.exports = isArrayLike;
 
-},{"./isFunction":118,"./isLength":119}],116:[function(require,module,exports){
+},{"./isFunction":119,"./isLength":120}],117:[function(require,module,exports){
 var root = require('./_root'),
     stubFalse = require('./stubFalse');
 
@@ -9435,7 +9607,7 @@ var isBuffer = nativeIsBuffer || stubFalse;
 
 module.exports = isBuffer;
 
-},{"./_root":102,"./stubFalse":125}],117:[function(require,module,exports){
+},{"./_root":103,"./stubFalse":126}],118:[function(require,module,exports){
 var baseIsEqual = require('./_baseIsEqual');
 
 /**
@@ -9472,7 +9644,7 @@ function isEqual(value, other) {
 
 module.exports = isEqual;
 
-},{"./_baseIsEqual":57}],118:[function(require,module,exports){
+},{"./_baseIsEqual":58}],119:[function(require,module,exports){
 var baseGetTag = require('./_baseGetTag'),
     isObject = require('./isObject');
 
@@ -9511,7 +9683,7 @@ function isFunction(value) {
 
 module.exports = isFunction;
 
-},{"./_baseGetTag":55,"./isObject":120}],119:[function(require,module,exports){
+},{"./_baseGetTag":56,"./isObject":121}],120:[function(require,module,exports){
 /** Used as references for various `Number` constants. */
 var MAX_SAFE_INTEGER = 9007199254740991;
 
@@ -9548,7 +9720,7 @@ function isLength(value) {
 
 module.exports = isLength;
 
-},{}],120:[function(require,module,exports){
+},{}],121:[function(require,module,exports){
 /**
  * Checks if `value` is the
  * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
@@ -9581,7 +9753,7 @@ function isObject(value) {
 
 module.exports = isObject;
 
-},{}],121:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 /**
  * Checks if `value` is object-like. A value is object-like if it's not `null`
  * and has a `typeof` result of "object".
@@ -9612,7 +9784,7 @@ function isObjectLike(value) {
 
 module.exports = isObjectLike;
 
-},{}],122:[function(require,module,exports){
+},{}],123:[function(require,module,exports){
 var baseIsTypedArray = require('./_baseIsTypedArray'),
     baseUnary = require('./_baseUnary'),
     nodeUtil = require('./_nodeUtil');
@@ -9641,7 +9813,7 @@ var isTypedArray = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedA
 
 module.exports = isTypedArray;
 
-},{"./_baseIsTypedArray":60,"./_baseUnary":63,"./_nodeUtil":99}],123:[function(require,module,exports){
+},{"./_baseIsTypedArray":61,"./_baseUnary":64,"./_nodeUtil":100}],124:[function(require,module,exports){
 var arrayLikeKeys = require('./_arrayLikeKeys'),
     baseKeys = require('./_baseKeys'),
     isArrayLike = require('./isArrayLike');
@@ -9680,7 +9852,7 @@ function keys(object) {
 
 module.exports = keys;
 
-},{"./_arrayLikeKeys":50,"./_baseKeys":61,"./isArrayLike":115}],124:[function(require,module,exports){
+},{"./_arrayLikeKeys":51,"./_baseKeys":62,"./isArrayLike":116}],125:[function(require,module,exports){
 /**
  * This method returns a new empty array.
  *
@@ -9705,7 +9877,7 @@ function stubArray() {
 
 module.exports = stubArray;
 
-},{}],125:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 /**
  * This method returns `false`.
  *
@@ -9725,313 +9897,7 @@ function stubFalse() {
 
 module.exports = stubFalse;
 
-},{}],126:[function(require,module,exports){
-(function (process){
-// .dirname, .basename, and .extname methods are extracted from Node.js v8.11.1,
-// backported and transplited with Babel, with backwards-compat fixes
-
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-// resolves . and .. elements in a path array with directory names there
-// must be no slashes, empty elements, or device names (c:\) in the array
-// (so also no leading and trailing slashes - it does not distinguish
-// relative and absolute paths)
-function normalizeArray(parts, allowAboveRoot) {
-  // if the path tries to go above the root, `up` ends up > 0
-  var up = 0;
-  for (var i = parts.length - 1; i >= 0; i--) {
-    var last = parts[i];
-    if (last === '.') {
-      parts.splice(i, 1);
-    } else if (last === '..') {
-      parts.splice(i, 1);
-      up++;
-    } else if (up) {
-      parts.splice(i, 1);
-      up--;
-    }
-  }
-
-  // if the path is allowed to go above the root, restore leading ..s
-  if (allowAboveRoot) {
-    for (; up--; up) {
-      parts.unshift('..');
-    }
-  }
-
-  return parts;
-}
-
-// path.resolve([from ...], to)
-// posix version
-exports.resolve = function() {
-  var resolvedPath = '',
-      resolvedAbsolute = false;
-
-  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
-    var path = (i >= 0) ? arguments[i] : process.cwd();
-
-    // Skip empty and invalid entries
-    if (typeof path !== 'string') {
-      throw new TypeError('Arguments to path.resolve must be strings');
-    } else if (!path) {
-      continue;
-    }
-
-    resolvedPath = path + '/' + resolvedPath;
-    resolvedAbsolute = path.charAt(0) === '/';
-  }
-
-  // At this point the path should be resolved to a full absolute path, but
-  // handle relative paths to be safe (might happen when process.cwd() fails)
-
-  // Normalize the path
-  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
-    return !!p;
-  }), !resolvedAbsolute).join('/');
-
-  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
-};
-
-// path.normalize(path)
-// posix version
-exports.normalize = function(path) {
-  var isAbsolute = exports.isAbsolute(path),
-      trailingSlash = substr(path, -1) === '/';
-
-  // Normalize the path
-  path = normalizeArray(filter(path.split('/'), function(p) {
-    return !!p;
-  }), !isAbsolute).join('/');
-
-  if (!path && !isAbsolute) {
-    path = '.';
-  }
-  if (path && trailingSlash) {
-    path += '/';
-  }
-
-  return (isAbsolute ? '/' : '') + path;
-};
-
-// posix version
-exports.isAbsolute = function(path) {
-  return path.charAt(0) === '/';
-};
-
-// posix version
-exports.join = function() {
-  var paths = Array.prototype.slice.call(arguments, 0);
-  return exports.normalize(filter(paths, function(p, index) {
-    if (typeof p !== 'string') {
-      throw new TypeError('Arguments to path.join must be strings');
-    }
-    return p;
-  }).join('/'));
-};
-
-
-// path.relative(from, to)
-// posix version
-exports.relative = function(from, to) {
-  from = exports.resolve(from).substr(1);
-  to = exports.resolve(to).substr(1);
-
-  function trim(arr) {
-    var start = 0;
-    for (; start < arr.length; start++) {
-      if (arr[start] !== '') break;
-    }
-
-    var end = arr.length - 1;
-    for (; end >= 0; end--) {
-      if (arr[end] !== '') break;
-    }
-
-    if (start > end) return [];
-    return arr.slice(start, end - start + 1);
-  }
-
-  var fromParts = trim(from.split('/'));
-  var toParts = trim(to.split('/'));
-
-  var length = Math.min(fromParts.length, toParts.length);
-  var samePartsLength = length;
-  for (var i = 0; i < length; i++) {
-    if (fromParts[i] !== toParts[i]) {
-      samePartsLength = i;
-      break;
-    }
-  }
-
-  var outputParts = [];
-  for (var i = samePartsLength; i < fromParts.length; i++) {
-    outputParts.push('..');
-  }
-
-  outputParts = outputParts.concat(toParts.slice(samePartsLength));
-
-  return outputParts.join('/');
-};
-
-exports.sep = '/';
-exports.delimiter = ':';
-
-exports.dirname = function (path) {
-  if (typeof path !== 'string') path = path + '';
-  if (path.length === 0) return '.';
-  var code = path.charCodeAt(0);
-  var hasRoot = code === 47 /*/*/;
-  var end = -1;
-  var matchedSlash = true;
-  for (var i = path.length - 1; i >= 1; --i) {
-    code = path.charCodeAt(i);
-    if (code === 47 /*/*/) {
-        if (!matchedSlash) {
-          end = i;
-          break;
-        }
-      } else {
-      // We saw the first non-path separator
-      matchedSlash = false;
-    }
-  }
-
-  if (end === -1) return hasRoot ? '/' : '.';
-  if (hasRoot && end === 1) {
-    // return '//';
-    // Backwards-compat fix:
-    return '/';
-  }
-  return path.slice(0, end);
-};
-
-function basename(path) {
-  if (typeof path !== 'string') path = path + '';
-
-  var start = 0;
-  var end = -1;
-  var matchedSlash = true;
-  var i;
-
-  for (i = path.length - 1; i >= 0; --i) {
-    if (path.charCodeAt(i) === 47 /*/*/) {
-        // If we reached a path separator that was not part of a set of path
-        // separators at the end of the string, stop now
-        if (!matchedSlash) {
-          start = i + 1;
-          break;
-        }
-      } else if (end === -1) {
-      // We saw the first non-path separator, mark this as the end of our
-      // path component
-      matchedSlash = false;
-      end = i + 1;
-    }
-  }
-
-  if (end === -1) return '';
-  return path.slice(start, end);
-}
-
-// Uses a mixed approach for backwards-compatibility, as ext behavior changed
-// in new Node.js versions, so only basename() above is backported here
-exports.basename = function (path, ext) {
-  var f = basename(path);
-  if (ext && f.substr(-1 * ext.length) === ext) {
-    f = f.substr(0, f.length - ext.length);
-  }
-  return f;
-};
-
-exports.extname = function (path) {
-  if (typeof path !== 'string') path = path + '';
-  var startDot = -1;
-  var startPart = 0;
-  var end = -1;
-  var matchedSlash = true;
-  // Track the state of characters (if any) we see before our first dot and
-  // after any path separator we find
-  var preDotState = 0;
-  for (var i = path.length - 1; i >= 0; --i) {
-    var code = path.charCodeAt(i);
-    if (code === 47 /*/*/) {
-        // If we reached a path separator that was not part of a set of path
-        // separators at the end of the string, stop now
-        if (!matchedSlash) {
-          startPart = i + 1;
-          break;
-        }
-        continue;
-      }
-    if (end === -1) {
-      // We saw the first non-path separator, mark this as the end of our
-      // extension
-      matchedSlash = false;
-      end = i + 1;
-    }
-    if (code === 46 /*.*/) {
-        // If this is our first dot, mark it as the start of our extension
-        if (startDot === -1)
-          startDot = i;
-        else if (preDotState !== 1)
-          preDotState = 1;
-    } else if (startDot !== -1) {
-      // We saw a non-dot and non-path separator before our dot, so we should
-      // have a good chance at having a non-empty extension
-      preDotState = -1;
-    }
-  }
-
-  if (startDot === -1 || end === -1 ||
-      // We saw a non-dot character immediately before the dot
-      preDotState === 0 ||
-      // The (right-most) trimmed path component is exactly '..'
-      preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
-    return '';
-  }
-  return path.slice(startDot, end);
-};
-
-function filter (xs, f) {
-    if (xs.filter) return xs.filter(f);
-    var res = [];
-    for (var i = 0; i < xs.length; i++) {
-        if (f(xs[i], i, xs)) res.push(xs[i]);
-    }
-    return res;
-}
-
-// String.prototype.substr - negative index don't work in IE8
-var substr = 'ab'.substr(-1) === 'b'
-    ? function (str, start, len) { return str.substr(start, len) }
-    : function (str, start, len) {
-        if (start < 0) start = str.length + start;
-        return str.substr(start, len);
-    }
-;
-
-}).call(this,require('_process'))
-},{"_process":127}],127:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -10281,11 +10147,12 @@ SafeBuffer.allocUnsafeSlow = function (size) {
   return buffer.SlowBuffer(size)
 }
 
-},{"buffer":4}],129:[function(require,module,exports){
+},{"buffer":5}],129:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 var cbor = require('cbor-js');
 var CRC = require('crc');
 var base58 = require('./crypto/base58');
-var bech32 = require('./crypto/bech32');
+var { bech32 } = require('bech32');
 
 var DEFAULT_NETWORK_TYPE = 'prod';
 
@@ -10328,9 +10195,13 @@ function isValidBech32Address(address, currency, networkType) {
         return false;
     }
 
-    var dec = bech32.decode(address, 103);
+    try {
+        var dec = bech32.decode(address, 103);
+    } catch (err) {
+        return false;
+    }
 
-    if (dec === null || dec.hrp !== hrp || dec.data.length < 1 || dec.data[0] > 16) {
+    if (dec === null || dec.prefix !== hrp || dec.words.length < 1 || dec.words[0] > 16) {
         return false;
     }
 
@@ -10342,10 +10213,17 @@ module.exports = {
         networkType = networkType || DEFAULT_NETWORK_TYPE;
         return isValidLegacyAddress(address)
             || isValidBech32Address(address, currency, networkType);
-    }
+    },
+    getAddressType: function(address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
 };
 
-},{"./crypto/base58":137,"./crypto/bech32":138,"cbor-js":5,"crc":30}],130:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./crypto/base58":137,"bech32":3,"cbor-js":6,"crc":31}],130:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 var base58 = require('./crypto/base58')
 
 const ALLOWED_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -10366,10 +10244,18 @@ module.exports = {
     var decoded = base58.decode(address)
     decoded.splice(-4, 4) // remove last 4 elements. Why is base 58 adding them?
     return decoded.length === 32
-  }
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
-},{"./crypto/base58":137}],131:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./crypto/base58":137}],131:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 const ardorRegex = new RegExp('^ARDOR(-[A-Z0-9]{4}){3}(-[A-Z0-9]{5})$')
 
 module.exports = {
@@ -10379,12 +10265,20 @@ module.exports = {
     }
 
     return true
-  }
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
 
-},{}],132:[function(require,module,exports){
-var utils = require('./crypto/utils')
+},{"../src/crypto/utils":144}],132:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
+const { bech32 } = require('bech32');
 
 const ALLOWED_CHARS = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
 
@@ -10392,29 +10286,60 @@ var regexp = new RegExp('^(cosmos)1([' + ALLOWED_CHARS + ']+)$') // cosmos + bec
 
 module.exports = {
   isValidAddress: function (address, currency, networkType) {
-    let match = regexp.exec(address)
-    if (match !== null) {
-      return this.verifyChecksum(address)
-    } else {
-      return false
-    }
+    return regexp.exec(address) !== null;
   },
 
   verifyChecksum: function (address) {
-    var decoded = utils.bech32.decode(address)
-    if (decoded !== null) {
-      return decoded.data.length === 32
-    } else {
-      return false
-    }
-  }
+    const decoded = bech32.decode(address);
+    return decoded && decoded.words.length === 32;
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
 
-},{"./crypto/utils":145}],133:[function(require,module,exports){
+},{"../src/crypto/utils":144,"bech32":3}],133:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils');
-var bech32 = require('./crypto/bech32');
 var BTCValidator = require('./bitcoin_validator');
+
+var GENERATOR = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+
+function polymod(values) {
+    var chk = 1;
+    for (var p = 0; p < values.length; ++p) {
+        var top = chk >> 25;
+        chk = ((chk & 0x1ffffff) << 5) ^ values[p];
+        for (var i = 0; i < 5; ++i) {
+            if ((top >> i) & 1) {
+                chk ^= GENERATOR[i];
+            }
+        }
+    }
+    return chk;
+}
+
+function hrpExpand(hrp) {
+    var ret = [];
+    var p;
+    for (p = 0; p < hrp.length; ++p) {
+        ret.push(hrp.charCodeAt(p) >> 5);
+    }
+    ret.push(0);
+    for (p = 0; p < hrp.length; ++p) {
+        ret.push(hrp.charCodeAt(p) & 31);
+    }
+    return ret;
+}
+
+function verifyChecksum(hrp, data) {
+    return polymod(hrpExpand(hrp).concat(data)) === 1;
+}
 
 function validateAddress(address, currency, networkType) {
     var prefix = 'bitcoincash';
@@ -10448,12 +10373,13 @@ function validateAddress(address, currency, networkType) {
     }
 
     try {
-        if (bech32.verifyChecksum(prefix, decoded)) {
+        if (verifyChecksum(prefix, decoded)) {
             return false;
         }
     } catch (e) {
         return false;
     }
+
     return true;
 }
 
@@ -10461,9 +10387,17 @@ module.exports = {
     isValidAddress: function (address, currency, networkType) {
         return validateAddress(address, currency, networkType) ||
             (currency.symbol !== 'bch' && BTCValidator.isValidAddress(address, currency, networkType));
+    },
+    getAddressType: function(address, currency, networkType) {
+        networkType = networkType || DEFAULT_NETWORK_TYPE;
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
     }
 }
-},{"./bitcoin_validator":135,"./crypto/bech32":138,"./crypto/utils":145}],134:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./bitcoin_validator":135,"./crypto/utils":144}],134:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 module.exports = {
   isValidAddress: function (address) {
       var binanceAddress = address.slice(address.indexOf('bnb'));
@@ -10472,13 +10406,21 @@ module.exports = {
       }
       return true;
   },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 };
 
-},{}],135:[function(require,module,exports){
+},{"../src/crypto/utils":144}],135:[function(require,module,exports){
 (function (Buffer){
+var bech32 = require('./crypto/bech32');
 var base58 = require('./crypto/base58');
-var segwit = require('./crypto/segwit_addr');
 var cryptoUtils = require('./crypto/utils');
+const { addressType } = require('./crypto/utils');
 
 var DEFAULT_NETWORK_TYPE = 'prod';
 
@@ -10540,32 +10482,117 @@ function getAddressType(address, currency) {
     return null;
 }
 
-function isValidP2PKHandP2SHAddress(address, currency, networkType) {
-    var correctAddressTypes;
-    var addressType = getAddressType(address, currency);
-
+function getOutputIndex(address, currency, networkType) {
+    let correctAddressTypes;
+    const addressType = getAddressType(address, currency);
     if (addressType) {
         if (networkType === 'prod' || networkType === 'testnet') {
             correctAddressTypes = currency.addressTypes[networkType]
         } else {
             correctAddressTypes = currency.addressTypes.prod.concat(currency.addressTypes.testnet);
         }
-
-        return correctAddressTypes.indexOf(addressType) >= 0;
+        return correctAddressTypes.indexOf(addressType);
     }
+    return null;
+}
 
+function isValidPayToPublicKeyHashAddress(address, currency, networkType) {
+    return getOutputIndex(address, currency, networkType) === 0;
+}
+
+function isValidPayToScriptHashAddress(address, currency, networkType) {
+    return getOutputIndex(address, currency, networkType) > 0;
+}
+
+function isValidPayToWitnessScriptHashAddress(address, currency, networkType) {
+    try {
+        const hrp = currency.segwitHrp[networkType];
+        const decoded = bech32.decode(hrp, address);
+        return decoded && decoded.version === 0 && decoded.program.length === 32;
+    } catch (err) {
+        return null;
+    }
+}
+
+function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType) {
+    try {
+        const hrp = currency.segwitHrp[networkType];
+        const decoded = bech32.decode(hrp, address);
+        return decoded && decoded.version === 0 && decoded.program.length === 20;
+    } catch (err) {
+        return null;
+    }
+}
+
+function isValidPayToTaprootAddress(address, currency, networkType) {
+    try {
+        const hrp = currency.segwitHrp[networkType];
+        decoded = bech32.decode(hrp, address, true);
+        return decoded && decoded.version === 1 && decoded.program.length === 32;
+    } catch (err) {}
+    return null;
+}
+
+function isValidSegwitAddress(address, currency, networkType) {
+    if (!currency.segwitHrp) {
+        return false;
+    }
+    var hrp = currency.segwitHrp[networkType];
+    if (!hrp) {
+        return false;
+    }
+    // try bech32 first
+    let ret = bech32.decode(hrp, address, false);
+    if (ret) {
+        if (ret.version === 0 || ret.program.length === 20 || ret.program.length === 32) {
+            return false;
+        } else {
+            return address.toLowerCase() === bech32.encode(hrp, ret.version, ret.program, false);
+        }
+    }
+    // then try bech32m
+    ret = bech32.decode(hrp, address, true);
+    if (ret) {
+        if (ret.version > 1 || ret.program.length !== 32) {
+            return address.toLowerCase() === bech32.encode(hrp, ret.version, ret.program, true);
+        }
+    }
     return false;
 }
 
 module.exports = {
     isValidAddress: function (address, currency, networkType) {        
         networkType = networkType || DEFAULT_NETWORK_TYPE;
-        return isValidP2PKHandP2SHAddress(address, currency, networkType) || segwit.isValidAddress(address, currency, networkType);
-    }
+        const addrType = this.getAddressType(address, currency, networkType);
+        // Though WITNESS_UNKNOWN is a valid address, it's not spendable - so we mark it as invalid
+        return addrType !== undefined && addrType !== addressType.WITNESS_UNKNOWN;
+    },
+    getAddressType: function(address, currency, networkType) {
+        networkType = networkType || DEFAULT_NETWORK_TYPE;
+        if (isValidPayToPublicKeyHashAddress(address, currency, networkType)) {
+            return addressType.P2PKH;
+        }
+        if (isValidPayToScriptHashAddress(address, currency, networkType)) {
+            return addressType.P2SH;
+        }
+        if (isValidPayToWitnessScriptHashAddress(address, currency, networkType)) {
+            return addressType.P2WSH;
+        }
+        if (isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType)) {
+            return addressType.P2WPKH;
+        }
+        if (isValidPayToTaprootAddress(address, currency, networkType)) {
+            return addressType.P2TR;
+        }
+        if (isValidSegwitAddress(address, currency, networkType)) {
+            return addressType.WITNESS_UNKNOWN;
+        }
+        return undefined;
+    },
 };
 
 }).call(this,require("buffer").Buffer)
-},{"./crypto/base58":137,"./crypto/segwit_addr":143,"./crypto/utils":145,"buffer":4}],136:[function(require,module,exports){
+},{"./crypto/base58":137,"./crypto/bech32":138,"./crypto/utils":144,"buffer":5}],136:[function(require,module,exports){
 var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
  /**
@@ -10681,126 +10708,76 @@ module.exports = {
 };
 
 },{}],138:[function(require,module,exports){
-// Copyright (c) 2017 Pieter Wuille
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
+const { bech32, bech32m } = require('bech32');
 
-var CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
-var GENERATOR = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
-
-module.exports = {
-  decode: decode,
-  encode: encode,
-  verifyChecksum: verifyChecksum
-};
-
-
-function polymod (values) {
-  var chk = 1;
-  for (var p = 0; p < values.length; ++p) {
-    var top = chk >> 25;
-    chk = (chk & 0x1ffffff) << 5 ^ values[p];
-    for (var i = 0; i < 5; ++i) {
-      if ((top >> i) & 1) {
-        chk ^= GENERATOR[i];
-      }
-    }
-  }
-  return chk;
-}
-
-function hrpExpand (hrp) {
+function convertbits(data, frombits, tobits, pad) {
+  var acc = 0;
+  var bits = 0;
   var ret = [];
-  var p;
-  for (p = 0; p < hrp.length; ++p) {
-    ret.push(hrp.charCodeAt(p) >> 5);
-  }
-  ret.push(0);
-  for (p = 0; p < hrp.length; ++p) {
-    ret.push(hrp.charCodeAt(p) & 31);
-  }
-  return ret;
-}
-
-function verifyChecksum (hrp, data) {
-  return polymod(hrpExpand(hrp).concat(data)) === 1;
-}
-
-function createChecksum (hrp, data) {
-  var values = hrpExpand(hrp).concat(data).concat([0, 0, 0, 0, 0, 0]);
-  var mod = polymod(values) ^ 1;
-  var ret = [];
-  for (var p = 0; p < 6; ++p) {
-    ret.push((mod >> 5 * (5 - p)) & 31);
-  }
-  return ret;
-}
-
-function encode (hrp, data) {
-  var combined = data.concat(createChecksum(hrp, data));
-  var ret = hrp + '1';
-  for (var p = 0; p < combined.length; ++p) {
-    ret += CHARSET.charAt(combined[p]);
-  }
-  return ret;
-}
-
-function decode (bechString, maxLength) {
-  maxLength=maxLength || 90;
-  var p;
-  var has_lower = false;
-  var has_upper = false;
-  for (p = 0; p < bechString.length; ++p) {
-    if (bechString.charCodeAt(p) < 33 || bechString.charCodeAt(p) > 126) {
+  var maxv = (1 << tobits) - 1;
+  for (var p = 0; p < data.length; ++p) {
+    var value = data[p];
+    if (value < 0 || (value >> frombits) !== 0) {
       return null;
     }
-    if (bechString.charCodeAt(p) >= 97 && bechString.charCodeAt(p) <= 122) {
-        has_lower = true;
-    }
-    if (bechString.charCodeAt(p) >= 65 && bechString.charCodeAt(p) <= 90) {
-        has_upper = true;
+    acc = (acc << frombits) | value;
+    bits += frombits;
+    while (bits >= tobits) {
+      bits -= tobits;
+      ret.push((acc >> bits) & maxv);
     }
   }
-  if (has_lower && has_upper) {
+  if (pad) {
+    if (bits > 0) {
+      ret.push((acc << (tobits - bits)) & maxv);
+    }
+  } else if (bits >= frombits || ((acc << (tobits - bits)) & maxv)) {
     return null;
   }
-  bechString = bechString.toLowerCase();
-  var pos = bechString.lastIndexOf('1');
-  if (pos < 1 || pos + 7 > bechString.length || bechString.length > maxLength) {
-    return null;
-  }
-  var hrp = bechString.substring(0, pos);
-  var data = [];
-  for (p = pos + 1; p < bechString.length; ++p) {
-    var d = CHARSET.indexOf(bechString.charAt(p));
-    if (d === -1) {
-      return null;
-    }
-    data.push(d);
-  }
-  if (!verifyChecksum(hrp, data)) {
-    return null;
-  }
-  return {hrp: hrp, data: data.slice(0, data.length - 6)};
+  return ret;
 }
 
-},{}],139:[function(require,module,exports){
+function decode(hrp, addr, m = false) {
+    let dec;
+    try {
+        if (m) {
+            dec = bech32m.decode(addr);
+        } else {
+            dec = bech32.decode(addr);
+        }
+    } catch (err) {
+        return null;
+    }
+    if (
+        dec === null ||
+        dec.prefix !== hrp ||
+        dec.words.length < 1 ||
+        dec.words[0] > 16
+    ) {
+        return null;
+    }
+    var res = convertbits(dec.words.slice(1), 5, 8, false);
+    if (res === null || res.length < 2 || res.length > 40) {
+        return null;
+    }
+    return { version: dec.words[0], program: res };
+}
+
+function encode(hrp, version, program, m = false) {
+    var ret;
+    if (m) {
+        ret = bech32m.encode(hrp, [version].concat(convertbits(program, 8, 5, true)));
+    } else {
+        ret = bech32.encode( hrp, [version].concat(convertbits(program, 8, 5, true)));
+    }
+    if (decode(hrp, ret, m) === null) {
+        return null;
+    }
+    return ret;
+}
+
+module.exports = { decode, encode };
+},{"bech32":3}],139:[function(require,module,exports){
 /*
 	JavaScript BigInteger library version 0.9.1
 	http://silentmatt.com/biginteger/
@@ -12442,7 +12419,7 @@ Blake256.prototype.digest = function (encoding) {
 
 module.exports = Blake256;
 }).call(this,require("buffer").Buffer)
-},{"buffer":4}],141:[function(require,module,exports){
+},{"buffer":5}],141:[function(require,module,exports){
 'use strict';
 
 /**
@@ -12948,105 +12925,6 @@ var cnBase58 = (function () {
 })();
 module.exports = cnBase58;
 },{"./biginteger":139}],143:[function(require,module,exports){
-// Copyright (c) 2017 Pieter Wuille
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
-var bech32 = require('./bech32');
-
-function convertbits(data, frombits, tobits, pad) {
-  var acc = 0;
-  var bits = 0;
-  var ret = [];
-  var maxv = (1 << tobits) - 1;
-  for (var p = 0; p < data.length; ++p) {
-    var value = data[p];
-    if (value < 0 || (value >> frombits) !== 0) {
-      return null;
-    }
-    acc = (acc << frombits) | value;
-    bits += frombits;
-    while (bits >= tobits) {
-      bits -= tobits;
-      ret.push((acc >> bits) & maxv);
-    }
-  }
-  if (pad) {
-    if (bits > 0) {
-      ret.push((acc << (tobits - bits)) & maxv);
-    }
-  } else if (bits >= frombits || ((acc << (tobits - bits)) & maxv)) {
-    return null;
-  }
-  return ret;
-}
-
-function decode(hrp, addr) {
-  var dec = bech32.decode(addr);
-  if (dec === null || dec.hrp !== hrp || dec.data.length < 1 || dec.data[0] > 16) {
-    return null;
-  }
-  var res = convertbits(dec.data.slice(1), 5, 8, false);
-  if (res === null || res.length < 2 || res.length > 40) {
-    return null;
-  }
-  if (dec.data[0] === 0 && res.length !== 20 && res.length !== 32) {
-    return null;
-  }
-  return { version: dec.data[0], program: res };
-}
-
-function encode(hrp, version, program) {
-  var ret = bech32.encode(hrp, [version].concat(convertbits(program, 8, 5, true)));
-  if (decode(hrp, ret) === null) {
-    return null;
-  }
-  return ret;
-}
-
-function isValidAddress(address, currency, networkType) {
-  if(!currency.segwitHrp) {
-    return false;
-  }
-
-  var hrp=currency.segwitHrp[networkType];
-  if(!hrp) {
-    return false;
-  }
-
-  var ret = decode(hrp, address);
-
-  if (ret === null) {
-    return false;
-  }
-
-  var recreate = encode(hrp, ret.version, ret.program);
-  return recreate === address.toLowerCase();
-}
-
-module.exports = {
-  encode: encode,
-  decode: decode,
-  isValidAddress: isValidAddress,
-};
-
-},{"./bech32":138}],144:[function(require,module,exports){
 (function (process,global){
 /**
  * [js-sha3]{@link https://github.com/emn178/js-sha3}
@@ -13690,7 +13568,7 @@ var f = function (s) {
 module.exports = methods;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":127}],145:[function(require,module,exports){
+},{"_process":127}],144:[function(require,module,exports){
 (function (Buffer){
 var jsSHA = require('jssha/src/sha256');
 var Blake256 = require('./blake256');
@@ -13700,6 +13578,17 @@ var base58 = require('./base58');
 var base32 = require('./base32');
 var BigNum = require('browserify-bignum');
 var groestl = require('groestl-hash-js');
+
+// Address types, compatible with Trezor
+const addressType = {
+    ADDRESS: 'address',
+    P2PKH: 'pkh',
+    P2WPKH: 'wpkh',
+    P2WSH: 'wsh',
+    P2SH: 'sh-wpkh',
+    P2TR: 'tr',
+    WITNESS_UNKNOWN: 'witness-unknown',
+};
 
 function numberToHex(number) {
     var hex = Math.round(number).toString(16)
@@ -13820,11 +13709,12 @@ module.exports = {
     bigNumberToBuffer: function(bignumber, size){
         return new BigNum(bignumber).toBuffer({ size, endian: 'big' });
     },
-    base32: base32
+    base32,
+    addressType,
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./base32":136,"./base58":137,"./blake256":140,"./blake2b":141,"./sha3":144,"browserify-bignum":3,"buffer":4,"groestl-hash-js":31,"jssha/src/sha256":36}],146:[function(require,module,exports){
+},{"./base32":136,"./base58":137,"./blake256":140,"./blake2b":141,"./sha3":143,"browserify-bignum":4,"buffer":5,"groestl-hash-js":32,"jssha/src/sha256":37}],145:[function(require,module,exports){
 var XRPValidator = require('./ripple_validator');
 var ETHValidator = require('./ethereum_validator');
 var BTCValidator = require('./bitcoin_validator');
@@ -14992,6 +14882,10 @@ var CURRENCIES = [
         symbol: 'luniverse',
         validator: ETHValidator,
     }, {
+        name: 'Binance Smart Chain',
+        symbol: 'bsc',
+        validator: ETHValidator,
+    }, {
         name: 'Binance',
         symbol: 'bnb',
         validator: BinanceValidator,
@@ -15044,7 +14938,8 @@ module.exports = {
 
 
 
-},{"./ada_validator":129,"./ae_validator":130,"./ardr_validator":131,"./atom_validator":132,"./bch_validator":133,"./binance_validator":134,"./bitcoin_validator":135,"./eos_validator":147,"./ethereum_validator":148,"./hbar_validator":149,"./icx_validator":150,"./iost_validator":151,"./lisk_validator":152,"./monero_validator":153,"./nano_validator":154,"./nem_validator":155,"./nxt_validator":156,"./ripple_validator":157,"./siacoin_validator":158,"./steem_validator":159,"./stellar_validator":160,"./sys_validator":161,"./tezos_validator":162,"./tron_validator":163,"./zil_validator":165}],147:[function(require,module,exports){
+},{"./ada_validator":129,"./ae_validator":130,"./ardr_validator":131,"./atom_validator":132,"./bch_validator":133,"./binance_validator":134,"./bitcoin_validator":135,"./eos_validator":146,"./ethereum_validator":147,"./hbar_validator":148,"./icx_validator":149,"./iost_validator":150,"./lisk_validator":151,"./monero_validator":152,"./nano_validator":153,"./nem_validator":154,"./nxt_validator":155,"./ripple_validator":156,"./siacoin_validator":157,"./steem_validator":158,"./stellar_validator":159,"./sys_validator":160,"./tezos_validator":161,"./tron_validator":162,"./zil_validator":164}],146:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 function isValidEOSAddress (address, currency, networkType) {
   var regex = /^[a-z0-9]+$/g // Must be numbers and lowercase letters only
   if (address.search(regex) !== -1 && address.length === 12) {
@@ -15057,10 +14952,18 @@ function isValidEOSAddress (address, currency, networkType) {
 module.exports = {
   isValidAddress: function (address, currency, networkType) {
     return isValidEOSAddress(address, currency, networkType)
-  }
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
-},{}],148:[function(require,module,exports){
+},{"../src/crypto/utils":144}],147:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils');
 
 module.exports = {
@@ -15093,10 +14996,18 @@ module.exports = {
         }
 
         return true;
-    }
+    },
+
+    getAddressType: function(address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
 };
 
-},{"./crypto/utils":145}],149:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./crypto/utils":144}],148:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 function isValidHBarAddress (address) {
   const split = address.split('.')
   if (split[0] !== '0' || split[1] !== '0') {
@@ -15110,11 +15021,19 @@ function isValidHBarAddress (address) {
 module.exports = {
   isValidAddress: function (address, currency, networkType) {
     return isValidHBarAddress(address)
-  }
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
 
-},{}],150:[function(require,module,exports){
+},{"../src/crypto/utils":144}],149:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 function isValidICXAddress (address, currency, networkType) {
   var regex = /^hx[0-9a-f]{40}$/g // Begins with hx followed by 40 hex chars
   if (address.search(regex) !== -1) {
@@ -15127,32 +15046,54 @@ function isValidICXAddress (address, currency, networkType) {
 module.exports = {
   isValidAddress: function (address, currency, networkType) {
     return isValidICXAddress(address, currency, networkType)
-  }
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
 
-},{}],151:[function(require,module,exports){
+},{"../src/crypto/utils":144}],150:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 const iostRegex = new RegExp('^[a-z0-9_]{5,11}$')
 
 module.exports = {
   isValidAddress: function (address, currency, networkType) {
     return iostRegex.test(address)
-  }
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
 
-},{}],152:[function(require,module,exports){
+},{"../src/crypto/utils":144}],151:[function(require,module,exports){
 (function (Buffer){
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils');
 
 var regexp = new RegExp('^[0-9]{1,20}L$');
 
 module.exports = {
     isValidAddress: function(address) {
+        return this.getAddressType(address) === addressType.ADDRESS;
+    },
+
+    getAddressType: function(address) {
         if (!regexp.test(address)) {
-            return false;
+            return undefined;
         }
-        return this.verifyAddress(address)
+        if(this.verifyAddress(address)) {
+            return addressType.ADDRESS;
+        }
     },
 
     verifyAddress: function(address) {
@@ -15163,7 +15104,8 @@ module.exports = {
     }
 };
 }).call(this,require("buffer").Buffer)
-},{"./crypto/utils":145,"buffer":4}],153:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./crypto/utils":144,"buffer":5}],152:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils')
 var cnBase58 = require('./crypto/cnBase58')
 
@@ -15224,10 +15166,18 @@ module.exports = {
     var hashChecksum = cryptoUtils.keccak256Checksum(hextobin(decodedAddrStr.slice(0, -8)))
 
     return addrChecksum === hashChecksum
-  }
+  },
+
+  getAddressType: function(address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
-},{"./crypto/cnBase58":142,"./crypto/utils":145}],154:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./crypto/cnBase58":142,"./crypto/utils":144}],153:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils');
 var baseX = require('base-x');
 
@@ -15253,11 +15203,19 @@ module.exports = {
         var checksum = cryptoUtils.toHex(bytes.slice(-5).reverse());
 
         return computedChecksum === checksum
-    }
+    },
+
+    getAddressType: function(address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
 };
 
-},{"./crypto/utils":145,"base-x":1}],155:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./crypto/utils":144,"base-x":1}],154:[function(require,module,exports){
 (function (Buffer){
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils');
 
  /**
@@ -15280,21 +15238,37 @@ var isValidAddress = function(_address) {
 
 module.exports = {
     isValidAddress: isValidAddress,
+
+    getAddressType: function(address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
 }
 }).call(this,require("buffer").Buffer)
-},{"./crypto/utils":145,"buffer":4}],156:[function(require,module,exports){
-const nxtRegex = new RegExp('^NXT(-[A-Z0-9]{4}){3}-[A-Z0-9]{5}$')
+},{"../src/crypto/utils":144,"./crypto/utils":144,"buffer":5}],155:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
+const nxtRegex = new RegExp("^NXT(-[A-Z0-9]{4}){3}-[A-Z0-9]{5}$");
 
 module.exports = {
-  isValidAddress: function (address, currency, networkType) {
-	if (!nxtRegex.test(address)) {
-		return false;
-	}
-	return true;
-  }
-}
+    isValidAddress: function (address, currency, networkType) {
+        if (!nxtRegex.test(address)) {
+            return false;
+        }
+        return true;
+    },
 
-},{}],157:[function(require,module,exports){
+    getAddressType: function (address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
+};
+
+},{"../src/crypto/utils":144}],156:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils');
 var baseX = require('base-x');
 
@@ -15321,40 +15295,48 @@ module.exports = {
         var checksum = cryptoUtils.toHex(bytes.slice(-4));
 
         return computedChecksum === checksum
-    }
+    },
+
+    getAddressType: function (address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
 };
 
-},{"./crypto/utils":145,"base-x":1}],158:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./crypto/utils":144,"base-x":1}],157:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils')
 var isEqual = require('lodash/isEqual')
-
-function hexToBytes(hex) {
-  var bytes = []
-  for (var c = 0; c < hex.length; c += 2) {
-    bytes.push(parseInt(hex.substr(c, 2), 16))
-  }
-  return bytes
-}
 
 module.exports = {
   isValidAddress: function(address) {
     if (address.length !== 76) {
       // Check if it has the basic requirements of an address
-      return false
+      return false;
     }
 
     // Otherwise check each case
-    return this.verifyChecksum(address)
+    return this.verifyChecksum(address);
   },
   verifyChecksum: function(address) {
     var checksumBytes = address.slice(0, 32*2)
     var check = address.slice(32*2, 38*2)
     var blakeHash = cryptoUtils.blake2b(checksumBytes, 32).slice(0, 6*2)
-    return !!isEqual(blakeHash, check)
-  }
+    return isEqual(blakeHash, check);
+  },
+
+  getAddressType: function (address, currency, networkType) {
+      if (this.isValidAddress(address)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
-},{"./crypto/utils":145,"lodash/isEqual":117}],159:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./crypto/utils":144,"lodash/isEqual":118}],158:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 const accountRegex = new RegExp('^[a-z0-9-.]{3,}$')
 const segmentRegex = new RegExp('^[a-z][a-z0-9-]+[a-z0-9]$')
 const doubleDashRegex = new RegExp('--')
@@ -15362,31 +15344,35 @@ const doubleDashRegex = new RegExp('--')
 module.exports = {
   isValidAddress: function (address, currency, networkType) {
     if (!accountRegex.test(address)) {
-      return false
+      return false;
     }
-
     let segments = address.split('.')
     for (let i = 0; i < segments.length; i++) {
       let segment = segments[i]
       if (segment.length < 3) {
-        return false
+        return false;
       }
-
       if (!segmentRegex.test(segment)) {
-        return false
+        return false;
       }
-
       if (doubleDashRegex.test(segment)) {
-        return false
+        return false;
       }
     }
+    return true;
+  },
 
-    return true
-  }
+  getAddressType: function (address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
 
-},{}],160:[function(require,module,exports){
+},{"../src/crypto/utils":144}],159:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 var baseX = require('base-x');
 var crc = require('crc');
 var cryptoUtils = require('./crypto/utils');
@@ -15431,21 +15417,36 @@ var ed25519PublicKeyVersionByte = (6 << 3);
         var checksum = cryptoUtils.toHex(bytes.slice(-2));
 
          return computedChecksum === checksum
-    }
+    },
+
+    getAddressType: function (address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
 };
-},{"./crypto/utils":145,"base-x":1,"crc":30}],161:[function(require,module,exports){
-const path = require('path')
+},{"../src/crypto/utils":144,"./crypto/utils":144,"base-x":1,"crc":31}],160:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 const BTCValidator = require('./bitcoin_validator');
 var regexp = new RegExp('^sys1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{39}$')
 
 module.exports = {
   isValidAddress: function (address, currency, networkType) {
     return regexp.test(address) || BTCValidator.isValidAddress(address, currency, networkType)
-  }
+  },
+
+  getAddressType: function (address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
 
-},{"./bitcoin_validator":135,"path":126}],162:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./bitcoin_validator":135}],161:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 const base58 = require('./crypto/base58');
 const cryptoUtils = require('./crypto/utils');
 
@@ -15480,10 +15481,18 @@ const isValidAddress = function(address) {
 };
 
 module.exports = {
-    isValidAddress
+    isValidAddress,
+
+    getAddressType: function (address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
 };
 
-},{"./crypto/base58":137,"./crypto/utils":145}],163:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./crypto/base58":137,"./crypto/utils":144}],162:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
 var cryptoUtils = require('./crypto/utils');
 
 function decodeBase58Address(base58Sting) {
@@ -15543,9 +15552,16 @@ module.exports = {
         }
 
         return getEnv(currency, networkType) === address[0];
-    }
+    },
+
+    getAddressType: function (address, currency, networkType) {
+        if (this.isValidAddress(address, currency, networkType)) {
+            return addressType.ADDRESS;
+        }
+        return undefined;
+    },
 };
-},{"./crypto/utils":145}],164:[function(require,module,exports){
+},{"../src/crypto/utils":144,"./crypto/utils":144}],163:[function(require,module,exports){
 var currencies = require('./currencies');
 
 var DEFAULT_CURRENCY_NAME = 'bitcoin';
@@ -15560,6 +15576,16 @@ module.exports = {
 
         throw new Error('Missing validator for currency: ' + currencyNameOrSymbol);
     },
+    getAddressType: function(address, currencyNameOrSymbol, networkType) {
+        var currency = currencies.getByNameOrSymbol(currencyNameOrSymbol || DEFAULT_CURRENCY_NAME);
+        if (!currency || !currency.validator) {
+            throw new Error('getAddressType: No validator for currency' + currencyNameOrSymbol);
+        }
+        if (currency && currency.validator && currency.validator.getAddressType) {
+            return currency.validator.getAddressType(address, currency, networkType);
+        }
+        throw new Error('getAddressType not defined for currency: ' + currencyNameOrSymbol);
+    },
     getCurrencies: function () {
         return currencies.getAll();
     },
@@ -15568,8 +15594,9 @@ module.exports = {
     }
 };
 
-},{"./currencies":146}],165:[function(require,module,exports){
-var utils = require('./crypto/utils')
+},{"./currencies":145}],164:[function(require,module,exports){
+const { addressType } = require('../src/crypto/utils');
+const { bech32 } = require('bech32');
 
 const ALLOWED_CHARS = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
 
@@ -15578,23 +15605,21 @@ var regexp = new RegExp('^(zil)1([' + ALLOWED_CHARS + ']+)$') // zil + bech32 se
 module.exports = {
   isValidAddress: function (address, currency, networkType) {
     let match = regexp.exec(address)
-    if (match !== null) {
-      return this.verifyChecksum(address)
-    } else {
-      return false
+    if (!match) {
+      return false;
     }
+    const decoded = bech32.decode(address);
+    return decoded && decoded.words.length === 32;
   },
 
-  verifyChecksum: function (address) {
-    var decoded = utils.bech32.decode(address)
-    if (decoded !== null) {
-      return decoded.data.length === 32
-    } else {
-      return false
-    }
-  }
+  getAddressType: function (address, currency, networkType) {
+      if (this.isValidAddress(address, currency, networkType)) {
+          return addressType.ADDRESS;
+      }
+      return undefined;
+  },
 }
 
 
-},{"./crypto/utils":145}]},{},[164])(164)
+},{"../src/crypto/utils":144,"bech32":3}]},{},[163])(163)
 });
