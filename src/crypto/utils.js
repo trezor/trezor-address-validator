@@ -10,12 +10,12 @@ var groestl = require('groestl-hash-js');
 // Address types, compatible with Trezor
 const addressType = {
     ADDRESS: 'address',
-    P2PKH: 'pkh',
-    P2WPKH: 'wpkh',
-    P2WSH: 'wsh',
-    P2SH: 'sh-wpkh',
-    P2TR: 'tr',
-    WITNESS_UNKNOWN: 'witness-unknown',
+    P2PKH: 'p2pkh',
+    P2WPKH: 'p2wpkh',
+    P2WSH: 'p2wsh',
+    P2SH: 'p2sh',
+    P2TR: 'p2tr',
+    WITNESS_UNKNOWN: 'p2w-unknown',
 };
 
 function numberToHex(number) {
