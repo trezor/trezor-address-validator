@@ -427,7 +427,6 @@ describe('WAValidator.validate()', function () {
             valid('0x8A7395f281EeCf2B471B689E87Cf4C7fa8bb957d', 'BKX', 'testnet');
         });
 
-
         it('should return true for correct Cardano addresses', function () {
             valid('Ae2tdPwUPEYxYNJw1He1esdZYvjmr4NtPzUsGTiqL9zd8ohjZYQcwu6kom7', 'cardano');
             valid('DdzFFzCqrhsfdzUZxvuBkhV8Lpm9p43p9ubh79GCTkxJikAjKh51qhtCFMqUniC5tv5ZExyvSmAte2Du2tGimavSo6qSgXbjiy8qZRTg', 'ada');
@@ -438,8 +437,12 @@ describe('WAValidator.validate()', function () {
             valid('addr1qxclz0u9guazk70l9vv3xf67wx3psx3dekasvy43xfvz56qcs6f7ssw2x0fcesudyj8h224rnzkae2lqlnw8f3353t3sjggfx0', 'cardano');
         });
 
-        it('should match the expected Cardano address type', function () {
+        it('should match the expected Cardano address type - mainnet', function () {
             isValidAddressType('Ae2tdPwUPEYxYNJw1He1esdZYvjmr4NtPzUsGTiqL9zd8ohjZYQcwu6kom7', 'cardano', 'prod', addressType.ADDRESS);
+        });
+
+        it('should match the expected Cardano address type - testnet', function () {
+            isValidAddressType('addr_test1qru5ktsj5zsmhvwv0ep9zuhfu39x3wyt9wxjnsn3cagsyy59ckxhkvuc5xj49rw6zrp443wlygmhv8gwcu38jk6ms6usqd9a9q', 'cardano', 'testnet');
         });
 
         it('should return true for correct monero addresses', function () {
@@ -869,7 +872,7 @@ describe('WAValidator.validate()', function () {
             isValidAddressType('bittrexacct1', 'EOS', 'prod', addressType.ADDRESS);
             isValidAddressType('shitcoin', 'EOS', 'prod', undefined);
         });
-        
+
     });
 
     describe('invalid results', function () {
@@ -1146,7 +1149,7 @@ describe('WAValidator.validate()', function () {
 
         it('should return true for incorrect nano addresses', function () {
             valid('nano_1fnrrsrsifdpnkxrwwtfpjx5etcwt7a8hrz6fuqkh6w5i9jdsmo4yjg66iu7', 'nano');
-            
+
         });
 
         it('should return false for incorrect nano addresses', function () {
