@@ -51,6 +51,12 @@ var CURRENCIES = [
         addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4'] },
         validator: BCHValidator,
     }, {
+        name: 'Fujicoin',
+        symbol: 'fjc',
+        segwitHrp: { prod: 'fc', testnet: 'tf' },
+        addressTypes: { prod: ['24', '10'], testnet: ['4a', 'c4'] },
+        validator: BTCValidator,
+    }, {
         name: 'LiteCoin',
         symbol: 'ltc',
         segwitHrp: { prod: 'ltc', testnet: 'tltc' },
