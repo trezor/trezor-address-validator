@@ -31,8 +31,8 @@ var CURRENCIES = [
     {
         name: 'Bitcoin',
         symbol: 'btc',
-        segwitHrp: { prod: 'bc', testnet: 'tb' },
-        addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4', '3c', '26'] },
+        segwitHrp: { prod: 'bc', testnet: 'tb', regtest: 'bcrt' },
+        addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4', '3c', '26'], regtest: ['6f', 'c4', '3c', '26'] },
         validator: BTCValidator,
     }, {
         name: 'BitcoinCash',

@@ -10483,14 +10483,13 @@ function getAddressType(address, currency) {
 }
 
 function getOutputIndex(address, currency, networkType) {
-    let correctAddressTypes;
     const addressType = getAddressType(address, currency);
     if (addressType) {
-        if (networkType === 'prod' || networkType === 'testnet') {
-            correctAddressTypes = currency.addressTypes[networkType]
-        } else {
-            correctAddressTypes = currency.addressTypes.prod.concat(currency.addressTypes.testnet);
-        }
+        const correctAddressTypes =
+            currency.addressTypes[networkType] ||
+            Object.keys(currency.addressTypes).reduce((all, key) => {
+                return all.concat(currency.addressTypes[key]);
+            }, []);
         return correctAddressTypes.indexOf(addressType);
     }
     return null;
@@ -13745,8 +13744,8 @@ var CURRENCIES = [
     {
         name: 'Bitcoin',
         symbol: 'btc',
-        segwitHrp: { prod: 'bc', testnet: 'tb' },
-        addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4', '3c', '26'] },
+        segwitHrp: { prod: 'bc', testnet: 'tb', regtest: 'bcrt' },
+        addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4', '3c', '26'], regtest: ['6f', 'c4', '3c', '26'] },
         validator: BTCValidator,
     }, {
         name: 'BitcoinCash',
@@ -13765,6 +13764,12 @@ var CURRENCIES = [
         regexp: '^[qQ]{1}[0-9a-zA-Z]{41}$',
         addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4'] },
         validator: BCHValidator,
+    }, {
+        name: 'Fujicoin',
+        symbol: 'fjc',
+        segwitHrp: { prod: 'fc', testnet: 'tf' },
+        addressTypes: { prod: ['24', '10'], testnet: ['4a', 'c4'] },
+        validator: BTCValidator,
     }, {
         name: 'LiteCoin',
         symbol: 'ltc',

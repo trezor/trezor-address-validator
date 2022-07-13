@@ -49,7 +49,13 @@ describe('WAValidator.validate()', function () {
             valid('2MxKEf2su6FGAUfCEAHreGFQvEYrfYNHvL7', 'bitcoin', 'testnet');
 
             // regtest
-            valid('GSa5espVLNseXEfKt46zEdS6jrPkmFghBU', 'bitcoin', 'testnet');
+            valid('mvbu1Gdy8SUjTenqerxUaZyYjmveZvt33q', 'bitcoin', 'regtest');
+            valid('ms1B699PA2tAfHTFTwN12Tzxa933WpmuHX', 'bitcoin', 'regtest');
+            valid('2N4Q5FhU2497BryFfUgbqkAJE87aKHUhXMp', 'bitcoin', 'regtest');
+            valid('GSa5espVLNseXEfKt46zEdS6jrPkmFghBU', 'bitcoin', 'regtest');
+
+            valid('bcrt1q8zx9dlztqz9apm7y5gtx8a0tlz57fhncycvun5', 'bitcoin', 'regtest');
+            valid('bcrt1pzndg2aenknysnqs0d8gwhg54nqnc6yut2c6as76h4tyqhr8spr6slpjy3x', 'bitcoin', 'regtest');
 
             // segwit addresses
             valid('BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4', 'bitcoin');
@@ -84,6 +90,12 @@ describe('WAValidator.validate()', function () {
             isValidAddressType('bc1sw50qgdz25j', 'bitcoin', 'prod', addressType.WITNESS_UNKNOWN); // bech32m ?
             isValidAddressType('bc1sw50qgdz25j', 'bitcoin', 'testnet', undefined);
             isValidAddressType('qwerty', 'bitcoin', 'prod', undefined);
+            isValidAddressType('mvbu1Gdy8SUjTenqerxUaZyYjmveZvt33q', 'bitcoin', 'regtest', addressType.P2PKH);
+            isValidAddressType('ms1B699PA2tAfHTFTwN12Tzxa933WpmuHX', 'bitcoin', 'regtest', addressType.P2PKH);
+            isValidAddressType('2N4Q5FhU2497BryFfUgbqkAJE87aKHUhXMp', 'bitcoin', 'regtest', addressType.P2SH);
+            isValidAddressType('GSa5espVLNseXEfKt46zEdS6jrPkmFghBU', 'bitcoin', 'regtest', addressType.P2SH);
+            isValidAddressType('bcrt1q8zx9dlztqz9apm7y5gtx8a0tlz57fhncycvun5', 'bitcoin', 'regtest', addressType.P2WPKH);
+            isValidAddressType('bcrt1pzndg2aenknysnqs0d8gwhg54nqnc6yut2c6as76h4tyqhr8spr6slpjy3x', 'bitcoin', 'regtest', addressType.P2TR);
         });
 
         it('should return true for correct bitcoincash addresses', function () {

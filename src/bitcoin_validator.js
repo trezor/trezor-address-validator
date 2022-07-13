@@ -64,14 +64,13 @@ function getAddressType(address, currency) {
 }
 
 function getOutputIndex(address, currency, networkType) {
-    let correctAddressTypes;
     const addressType = getAddressType(address, currency);
     if (addressType) {
-        if (networkType === 'prod' || networkType === 'testnet') {
-            correctAddressTypes = currency.addressTypes[networkType]
-        } else {
-            correctAddressTypes = currency.addressTypes.prod.concat(currency.addressTypes.testnet);
-        }
+        const correctAddressTypes =
+            currency.addressTypes[networkType] ||
+            Object.keys(currency.addressTypes).reduce((all, key) => {
+                return all.concat(currency.addressTypes[key]);
+            }, []);
         return correctAddressTypes.indexOf(addressType);
     }
     return null;
