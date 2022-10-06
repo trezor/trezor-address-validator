@@ -35,7 +35,7 @@
         "browser",
         "nodejs"
     ],
-    "version": "0.4.3",
+    "version": "0.4.4",
     "author": "Martin <martin.bohm@satoshilabs.com>",
     "homepage": "https://github.com/trezor/trezor-address-validator",
     "license": "MIT",
@@ -62,6 +62,7 @@
         "cbor-js": "^0.1.0",
         "crc": "^3.8.0",
         "groestl-hash-js": "1.0.0",
+        "js-sha512": "^0.8.0",
         "jssha": "2.3.1",
         "lodash": "^4.17.15"
     },

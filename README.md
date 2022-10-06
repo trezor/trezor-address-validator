@@ -41,6 +41,7 @@ npm install trezor-address-validator
 
 * 0x/zrx `'0x'` or `'zrx'`
 * Aave/lend `'Aave'` or `'lend'`
+* Algorand/algo `'Algorand'` or `'algo'`
 * Abyss Token/abyss `'Abyss Token'` or `'abyss'`
 * AdEx/adx `'AdEx'` or `'adx'`
 * adToken/adt `'adToken'` or `'adt'`
@@ -226,6 +227,7 @@ npm install trezor-address-validator
 * Perlin/perl `'Perlin'` or `'perl'`
 * Pillar/plr `'Pillar'` or `'plr'`
 * PIVX/pivx `'PIVX'` or `'pivx'`
+* Polkadot/dot `'Polkadot'` or `'dot'`
 * Po.et/poe `'Po.et'` or `'poe'`
 * Polymath/poly `'Polymath'` or `'poly'`
 * Populous/ppt `'Populous'` or `'ppt'`
@@ -258,6 +260,7 @@ npm install trezor-address-validator
 * SIRIN LABS Token/srn `'SIRIN LABS Token'` or `'srn'`
 * SkinCoin/skin `'SkinCoin'` or `'skin'`
 * SnowGem/sng `'SnowGem'` or `'sng'`
+* Solana/sol `'Solana'` or `'sol'`
 * SolarCoin/slr `'SolarCoin'` or `'slr'`
 * SOLVE/solve `'SOLVE'` or `'solve'`
 * SoMee.Social/ong `'SoMee.Social'` or `'ong'`

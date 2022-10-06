@@ -25,6 +25,11 @@ var STEEMValidator = require('./steem_validator');
 var SYSValidator = require('./sys_validator');
 var ZILValidator = require('./zil_validator');
 var NXTValidator = require('./nxt_validator');
+var DotValidator = require('./dot_validator');
+var AlgoValidator = require('./algo_validator');
+var Base58Validator = require('./base58_validator')
+var USDTValidator = require('./usdt_validator');
+
 
 // defines P2PKH, P2SH and bech32 address types for standard (prod) and testnet networks
 var CURRENCIES = [
@@ -1181,6 +1186,25 @@ var CURRENCIES = [
         name: 'Binance',
         symbol: 'bnb',
         validator: BinanceValidator,
+    }, {
+        name: 'Polkadot',
+        symbol: 'dot',
+        validator: DotValidator
+    }, {
+        name: 'Algorand',
+        symbol: 'algo',
+        validator: AlgoValidator
+    }, {
+        name: 'Solana',
+        symbol: 'sol',
+        validator: Base58Validator,
+        maxLength: 44,
+        minLength: 43
+    },  {
+        name: 'Tether',
+        symbol: 'usdt',
+        addressTypes: { prod: ['00', '05'], testnet: ['6f', 'c4'] },
+        validator: USDTValidator
     }, {
       name: 'EOS',
       symbol: 'eos',

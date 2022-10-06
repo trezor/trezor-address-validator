@@ -1,4 +1,5 @@
 var jsSHA = require('jssha/src/sha256');
+var sha512256 = require('js-sha512').sha512_256
 var Blake256 = require('./blake256');
 var keccak256 = require('./sha3')['keccak256'];
 var Blake2B = require('./blake2b');
@@ -105,6 +106,11 @@ module.exports = {
     },
     sha256Checksum: function (payload) {
         return this.sha256(this.sha256(payload)).substr(0, 8);
+    },
+    sha512_256: function (payload, format = 'HEX') {
+        const hash = sha512256.create()
+        hash.update(Buffer.from(payload, format))
+        return hash.hex().toUpperCase();
     },
     blake256: function (hexString) {
         return new Blake256().update(hexString, 'hex').digest('hex');
