@@ -96,6 +96,7 @@ describe('WAValidator.validate()', function () {
             isValidAddressType('GSa5espVLNseXEfKt46zEdS6jrPkmFghBU', 'bitcoin', 'regtest', addressType.P2SH);
             isValidAddressType('bcrt1q8zx9dlztqz9apm7y5gtx8a0tlz57fhncycvun5', 'bitcoin', 'regtest', addressType.P2WPKH);
             isValidAddressType('bcrt1pzndg2aenknysnqs0d8gwhg54nqnc6yut2c6as76h4tyqhr8spr6slpjy3x', 'bitcoin', 'regtest', addressType.P2TR);
+            isValidAddressType('tb1paya5a0xk7aar047qp0uy6f4rvyqaqac2zl7gx8sapu4kseztxspsz6ufa5', 'bitcoin', 'testnet', addressType.P2TR);
         });
 
         it('should return true for correct bitcoincash addresses', function () {
