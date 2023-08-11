@@ -40,22 +40,25 @@ function isValidBech32Address(address, currency, networkType) {
     if (!currency.segwitHrp) {
         return false;
     }
-    var hrp = currency.segwitHrp[networkType];
-    if (!hrp) {
-        return false;
-    }
 
-    try {
-        var dec = bech32.decode(address, networkType === 'prod' ? 103 : 108);
-    } catch (err) {
-        return false;
-    }
+    var hrps = currency.segwitHrp[networkType] ?
+        [currency.segwitHrp[networkType]] :
+        Object.values(currency.segwitHrp);
 
-    if (dec === null || dec.prefix !== hrp || dec.words.length < 1 || dec.words[0] > 16) {
-        return false;
-    }
+    for (var hrp in hrps) {
+        try {
+            var dec = bech32.decode(address, currency.segwitHrp.prod === hrp ? 103 : 108);
+        } catch (err) {
+            continue;
+        }
 
-    return true;
+        if (dec === null || dec.prefix !== hrp || dec.words.length < 1 || dec.words[0] > 16) {
+            continue;
+        }
+
+        return true;
+    }
+    return false;
 }
 
 module.exports = {

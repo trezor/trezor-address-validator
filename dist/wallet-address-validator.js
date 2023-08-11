@@ -188,7 +188,8 @@ function toByteArray (b64) {
     ? validLen - 4
     : validLen
 
-  for (var i = 0; i < len; i += 4) {
+  var i
+  for (i = 0; i < len; i += 4) {
     tmp =
       (revLookup[b64.charCodeAt(i)] << 18) |
       (revLookup[b64.charCodeAt(i + 1)] << 12) |
@@ -2564,6 +2565,7 @@ module.exports = BigNumber;
 
 }).call(this,require("buffer").Buffer)
 },{"buffer":5}],5:[function(require,module,exports){
+(function (Buffer){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -4342,7 +4344,8 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":2,"ieee754":36}],6:[function(require,module,exports){
+}).call(this,require("buffer").Buffer)
+},{"base64-js":2,"buffer":5,"ieee754":36}],6:[function(require,module,exports){
 /*
  * The MIT License (MIT)
  *
@@ -10190,22 +10193,25 @@ function isValidBech32Address(address, currency, networkType) {
     if (!currency.segwitHrp) {
         return false;
     }
-    var hrp = currency.segwitHrp[networkType];
-    if (!hrp) {
-        return false;
-    }
 
-    try {
-        var dec = bech32.decode(address, networkType === 'prod' ? 103 : 108);
-    } catch (err) {
-        return false;
-    }
+    var hrps = currency.segwitHrp[networkType] ?
+        [currency.segwitHrp[networkType]] :
+        Object.values(currency.segwitHrp);
 
-    if (dec === null || dec.prefix !== hrp || dec.words.length < 1 || dec.words[0] > 16) {
-        return false;
-    }
+    for (var hrp in hrps) {
+        try {
+            var dec = bech32.decode(address, currency.segwitHrp.prod === hrp ? 103 : 108);
+        } catch (err) {
+            continue;
+        }
 
-    return true;
+        if (dec === null || dec.prefix !== hrp || dec.words.length < 1 || dec.words[0] > 16) {
+            continue;
+        }
+
+        return true;
+    }
+    return false;
 }
 
 module.exports = {
@@ -10503,33 +10509,37 @@ function isValidPayToScriptHashAddress(address, currency, networkType) {
     return getOutputIndex(address, currency, networkType) > 0;
 }
 
-function isValidPayToWitnessScriptHashAddress(address, currency, networkType) {
-    try {
-        const hrp = currency.segwitHrp[networkType];
-        const decoded = bech32.decode(hrp, address);
-        return decoded && decoded.version === 0 && decoded.program.length === 32;
-    } catch (err) {
-        return null;
+function getHrp(currency, networkType) {
+    return currency.segwitHrp[networkType] ? [currency.segwitHrp[networkType]] : Object.values(currency.segwitHrp);
+}
+
+function validateHrp(hrps, address, condition, isBech32M) {
+    for (const hrp of hrps) {
+        try {
+            const decoded = bech32.decode(hrp, address, isBech32M);
+            if (decoded && condition(decoded)) {
+                return true;
+            }
+        } catch (err) {
+            continue;
+        }
     }
+    return null;
+}
+
+function isValidPayToWitnessScriptHashAddress(address, currency, networkType) {
+    const hrps = getHrp(currency, networkType);
+    return validateHrp(hrps, address, decoded => decoded.version === 0 && decoded.program.length === 32);
 }
 
 function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType) {
-    try {
-        const hrp = currency.segwitHrp[networkType];
-        const decoded = bech32.decode(hrp, address);
-        return decoded && decoded.version === 0 && decoded.program.length === 20;
-    } catch (err) {
-        return null;
-    }
+    const hrps = getHrp(currency, networkType);
+    return validateHrp(hrps, address, decoded => decoded.version === 0 && decoded.program.length === 20);
 }
 
 function isValidPayToTaprootAddress(address, currency, networkType) {
-    try {
-        const hrp = currency.segwitHrp[networkType];
-        decoded = bech32.decode(hrp, address, true);
-        return decoded && decoded.version === 1 && decoded.program.length === 32;
-    } catch (err) {}
-    return null;
+    const hrps = getHrp(currency, networkType);
+    return validateHrp(hrps, address, decoded => decoded.version === 1 && decoded.program.length === 32, true);
 }
 
 function isValidSegwitAddress(address, currency, networkType) {
@@ -10560,7 +10570,7 @@ function isValidSegwitAddress(address, currency, networkType) {
 }
 
 module.exports = {
-    isValidAddress: function (address, currency, networkType) {        
+    isValidAddress: function (address, currency, networkType) {
         networkType = networkType || DEFAULT_NETWORK_TYPE;
         const addrType = this.getAddressType(address, currency, networkType);
         // Though WITNESS_UNKNOWN is a valid address, it's not spendable - so we mark it as invalid
