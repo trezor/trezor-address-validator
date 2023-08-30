@@ -258,6 +258,7 @@ npm install trezor-address-validator
 * SIRIN LABS Token/srn `'SIRIN LABS Token'` or `'srn'`
 * SkinCoin/skin `'SkinCoin'` or `'skin'`
 * SnowGem/sng `'SnowGem'` or `'sng'`
+* Solana/sol `'Solana'` or `'sol'`
 * SolarCoin/slr `'SolarCoin'` or `'slr'`
 * SOLVE/solve `'SOLVE'` or `'solve'`
 * SoMee.Social/ong `'SoMee.Social'` or `'ong'`
