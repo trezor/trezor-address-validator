@@ -326,6 +326,9 @@ describe('WAValidator.validate()', function () {
             valid('0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb', 'ETZ');
             valid('0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb', 'callisto');
             valid('0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb', 'CLO');
+
+            valid('0xE37c0D48d68da5c5b14E5c1a9f1CFE802776D9FF', 'eth', 'trop')
+            valid('0xF03cF5f5959D5be4E6FDB684eEd464A1DbB69322', 'eth', 'tgor');
         });
 
         it('should match the expected eip55 address type', function () {
