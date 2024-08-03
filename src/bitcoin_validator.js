@@ -107,10 +107,11 @@ function isValidPayToWitnessPublicKeyHashAddress(address, currency, networkType)
 function isValidPayToTaprootAddress(address, currency, networkType) {
     try {
         const hrp = currency.segwitHrp[networkType];
-        decoded = bech32.decode(hrp, address, true);
+        const decoded = bech32.decode(hrp, address, true);
         return decoded && decoded.version === 1 && decoded.program.length === 32;
-    } catch (err) {}
-    return null;
+    } catch (err) {
+        return null;
+    }
 }
 
 function isValidSegwitAddress(address, currency, networkType) {
